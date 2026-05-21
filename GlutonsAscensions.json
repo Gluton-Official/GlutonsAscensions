@@ -1,0 +1,11 @@
+{
+  "id": "GlutonsAscensions",
+  "name": "GlutonsAscensions",
+  "author": "Gluton",
+  "description": "STS2 mod that adds additional ascensions",
+  "version": "v0.0.0",
+  "has_pck": true,
+  "has_dll": true,
+  "dependencies": ["BaseLib"],
+  "affects_gameplay": true
+}

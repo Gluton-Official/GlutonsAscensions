@@ -1,0 +1,22 @@
+{
+  "LEVEL_TORNRUG.description": "Merchants offer 1 less attack and skill, and no on-sale cards.",
+  "LEVEL_TORNRUG.title": "Torn Rug",
+  "LEVEL_OUTOFBUSINESS.description": "1 less marked Merchant room in each act.",
+  "LEVEL_OUTOFBUSINESS.title": "Out-of-Business",
+  "LEVEL_BARREN.description": "Unknown rooms are less common.",
+  "LEVEL_BARREN.title": "Barren",
+  "LEVEL_EMPTYFLASKS.description": "Enemy combats no longer have a chance to drop potions.",
+  "LEVEL_EMPTYFLASKS.title": "Empty Flasks",
+  "LEVEL_SHORTSUPPLY.description": "Ancients only offer 2 relics.",
+  "LEVEL_SHORTSUPPLY.title": "Short Supply",
+  "LEVEL_SLIMPICKINGS.description": "Elite combat card rewards have 1 less card.",
+  "LEVEL_SLIMPICKINGS.title": "Slim Pickings",
+  "LEVEL_PLUNDERED.description": "No marked Treasure Rooms.",
+  "LEVEL_PLUNDERED.title": "Plundered",
+  "LEVEL_COLDCOMFORT.description": "Ancients heal only 20% of missing health.",
+  "LEVEL_COLDCOMFORT.title": "Cold Comfort",
+  "LEVEL_UNPREPARED.description": "Draw 1 less card at the start of each combat.",
+  "LEVEL_UNPREPARED.title": "Unprepared",
+  "LEVEL_LOCKEDIN.description": "Starting Strikes and Defends gain Eternal.",
+  "LEVEL_LOCKEDIN.title": "Locked-In"
+}
