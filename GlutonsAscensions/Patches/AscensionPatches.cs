@@ -38,11 +38,7 @@ public static class AscensionPatches {
             return;
         }
         
-        var prevMaxAscensionAllowed = maxAscensionAllowed;
-
         GlutonsAscensionLevel.UpdateMaxAscensionAllowed(ref maxAscensionAllowed);
-        
-        GlutonsAscensionsMod.Logger.Info($"Modifying max ascension allowed constant from {prevMaxAscensionAllowed} to {maxAscensionAllowed}");
         
         codeMatcher
             .RemoveInstruction()

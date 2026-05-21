@@ -68,6 +68,7 @@ public static class GlutonsAscensionLevel {
             var ascension = enumField.GetValue(null) as AscensionLevel? ?? throw new Exception($"[GlutonsAscensions] CustomEnum field {enumField.Name} is not an AscensionLevel enum value");
             AddAscension(ascension, ascensionLevel, _names[index]);
         }
+        Logger.Info($"Initialized {Values.Count} ascensions: {Values.Join(value => _ascensionNames[value])}");
         _initialized = true;
     }
 
@@ -76,11 +77,9 @@ public static class GlutonsAscensionLevel {
         _ascensionNames[ascension] = name;
         _ascensionToLevelMap[ascension] = level;
         _levelToAScensionMap[level] = ascension;
-        Logger.Info($"Added Ascension {level}: {name}");
     }
 
     internal static void UpdateMaxAscensionAllowed(ref int maxAscensionAllowed) {
-        Logger.Info($"Updating max ascension allowed for value {maxAscensionAllowed} (base: {BaseMaxAscensionAllowed})");
         if (maxAscensionAllowed < BaseMaxAscensionAllowed) {
             throw new Exception($"[GlutonsAscensions] Max ascension allowed was attempted to be set lower than previous value ({BaseMaxAscensionAllowed}): {maxAscensionAllowed}");
         }

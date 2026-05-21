@@ -12,3 +12,7 @@ Adds 10 more ascensions.
 18. Cold Comfort - Ancients heal only 20% of missing health.
 19. Unprepared - Draw 1 less card at the start of each combat.
 20. Locked-In - Starting Strikes and Defends gain Eternal.
+
+### Todo
+
+- [ ] AscensionModel : AbstractModel
