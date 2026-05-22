@@ -5,7 +5,7 @@
   "LEVEL_OUTOFBUSINESS.title": "Out-of-Business",
   "LEVEL_BARREN.description": "Unknown rooms are less common.",
   "LEVEL_BARREN.title": "Barren",
-  "LEVEL_EMPTYFLASKS.description": "Enemy combats no longer have a chance to drop potions.",
+  "LEVEL_EMPTYFLASKS.description": "Potion rewards might be empty.",
   "LEVEL_EMPTYFLASKS.title": "Empty Flasks",
   "LEVEL_SHORTSUPPLY.description": "Ancients only offer 2 relics.",
   "LEVEL_SHORTSUPPLY.title": "Short Supply",
