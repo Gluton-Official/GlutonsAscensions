@@ -21,10 +21,4 @@ public class EmptyFlasksPatches {
             __instance.Potion = ModelDb.Potion<EmptyPotion>().ToMutable();
         }
     }
-
-    [HarmonyPatch(typeof(NPotionPopup), nameof(NPotionPopup._Ready))]
-    [HarmonyPrefix]
-    static void _ReadyPrefix() {
-        
-    }
 }
