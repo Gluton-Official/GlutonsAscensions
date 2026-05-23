@@ -2,7 +2,6 @@ using GlutonsAscensions.Helpers;
 using GlutonsAscensions.Models;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Nodes.Potions;
 using MegaCrit.Sts2.Core.Rewards;
 
 namespace GlutonsAscensions.Patches;
