@@ -1,7 +1,7 @@
 {
   "LEVEL_TORNRUG.description": "Merchants offer 1 less attack and skill, and no on-sale cards.",
   "LEVEL_TORNRUG.title": "Torn Rug",
-  "LEVEL_OUTOFBUSINESS.description": "1 less marked Merchant room in each act.",
+  "LEVEL_OUTOFBUSINESS.description": "Only 1 marked Merchant room in each act.",
   "LEVEL_OUTOFBUSINESS.title": "Out-of-Business",
   "LEVEL_BARREN.description": "Unknown rooms are less common.",
   "LEVEL_BARREN.title": "Barren",
@@ -11,7 +11,7 @@
   "LEVEL_SHORTSUPPLY.title": "Short Supply",
   "LEVEL_SLIMPICKINGS.description": "Elite combat card rewards have 1 less card.",
   "LEVEL_SLIMPICKINGS.title": "Slim Pickings",
-  "LEVEL_PLUNDERED.description": "No marked Treasure Rooms.",
+  "LEVEL_PLUNDERED.description": "Marked Treasure Chests are empty.",
   "LEVEL_PLUNDERED.title": "Plundered",
   "LEVEL_COLDCOMFORT.description": "Ancients heal only 20% of missing health.",
   "LEVEL_COLDCOMFORT.title": "Cold Comfort",
