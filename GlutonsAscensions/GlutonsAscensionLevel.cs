@@ -52,7 +52,7 @@ public static class GlutonsAscensionLevel {
     private static int BaseMaxAscensionAllowed;
     private static int FirstGlutonAscensionLevel => BaseMaxAscensionAllowed + 1;
     private static int LastGlutonAscensionLevel => BaseMaxAscensionAllowed + Enums.Length;
-    private static int MaxAscensionAllowed => LastGlutonAscensionLevel;
+    internal static int MaxAscensionAllowed => LastGlutonAscensionLevel;
 
     private static readonly Dictionary<AscensionLevel, int> _ascensionToLevelMap = new();
     private static readonly Dictionary<int, AscensionLevel> _levelToAScensionMap = new();

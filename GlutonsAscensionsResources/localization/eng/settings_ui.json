@@ -1,0 +1,6 @@
+{
+  "GLUTONSASCENSIONS.mod_title": "Gluton's Ascensions",
+  "GLUTONSASCENSIONS-UNLOCK_ASCENSION11.title": "Unlock",
+  "GLUTONSASCENSIONS-UNLOCK_ASCENSION11_BUTTON.title": "Ascension 11",
+  "GLUTONSASCENSIONS-UNLOCK_ASCENSION11_BUTTON.hover.desc": "Unlocks Ascension 11 for characters (and multiplayer) that are already at Ascension 10. Run `unlock ascensions` in the dev console if you want to unlock all ascensions for all characters."
+}

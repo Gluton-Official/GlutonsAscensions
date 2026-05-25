@@ -2,19 +2,49 @@
 
 STS2 mod that adds 10 new ascensions.
 
-| Level | Ascension       | Description                                                    | Notes                                                                                          |
-|-------|-----------------|----------------------------------------------------------------|------------------------------------------------------------------------------------------------|
-| 11    | Torn Rug        | Merchants offer 1 less attack and skill, and no on-sale cards. |                                                                                                |
-| 12    | Out-of-Business | Only 1 marked Merchant room in each act.                       |                                                                                                |
-| 13    | Barren          | Unknown rooms are less common.                                 | μ 12→10, σ 1, range 10–14→8–12                                                                 |
-| 14    | Empty Flasks    | Potion rewards may be empty.                                   | 50% chance                                                                                     |
-| 15    | Short Supply    | Ancients only offer 2 relics.                                  |                                                                                                |
-| 16    | Slim Pickings   | Elite combat card rewards have 1 less card.                    |                                                                                                |
-| 17    | Plundered       | Marked Treasure Chests are empty.                              | Spoils chest still contains bonus gold, Silver Crucible only affects non-marked Treasure rooms |
-| 18    | Cold Comfort    | Ancients heal only 20% of missing health.                      | Excludes Neow (Act 1)                                                                          |
-| 19    | Unprepared      | Draw 1 less card at the start of each combat.                  |                                                                                                |
-| 20    | Locked-In       | Starting deck gains Eternal.                                   | Includes all cards gained from Neow (logically floor 1 cards)                                  |
+## Ascensions
 
-### Todo
+| Level | Ascension       | Description                                                    | Notes                                                                                                                                    |
+|-------|-----------------|----------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| 11    | Torn Rug        | Merchants offer 1 less attack and skill, and no on-sale cards. |                                                                                                                                          |
+| 12    | Out-of-Business | Only 1 marked Merchant room in each act.                       |                                                                                                                                          |
+| 13    | Barren          | Unknown rooms are less common.                                 | Mean and range changed from 12, 10–14 to 10, 8–12                                                                                        |
+| 14    | Empty Flasks    | Potion rewards may be empty.                                   | 50% chance                                                                                                                               |
+| 15    | Short Supply    | Ancients only offer 2 relics.                                  |                                                                                                                                          |
+| 16    | Slim Pickings   | Elite combat card rewards have 1 less card.                    |                                                                                                                                          |
+| 17    | Plundered       | Marked Treasure Chests are empty.                              | Spoils chest still contains bonus gold, Silver Crucible only affects non-marked Treasure rooms                                           |
+| 18    | Cold Comfort    | Ancients heal only 20% of missing health.                      | Excludes Neow (Act 1)                                                                                                                    |
+| 19    | Unprepared      | Draw 1 less card at the start of each combat.                  |                                                                                                                                          |
+| 20    | Locked-In       | Starting deck gains Eternal.                                   | Includes all cards gained during Neow/Floor 1, some events and their options are disabled if entire deck is eternal (may encounter bugs) |
 
-- [ ] AscensionModel : AbstractModel
+> [!IMPORTANT]  
+> You can unlock Ascension 11 and following ascensions by winning a run on the previous ascension.
+>
+> If you have already completed Ascension 10, selecting Unlock for Ascension 11 in the Mod Configuration menu
+> will unlock Ascension 11 for all characters and in multiplayer only if they already have Ascension 10 unlocked.
+>
+> If you want to unlock all ascensions, run `unlock ascensions` in the dev console,
+> or `unlock ascensions <level>` to unlock up to a specific ascension level.
+
+## Disclaimers
+
+- Currently does not support the beta branch
+- Balance has not been tested
+- Not recommended to use with main save (theoretically nothing should break, but just in case)
+
+## Requirements
+
+- [BaseLib](https://github.com/Alchyr/BaseLib-StS2/releases/releases) (v3.1.6 or later)
+
+## Installation
+
+1. Download the `GlutonsAscensions.<version>.zip` from [latest release](https://github.com/Gluton-Official/GlutonsAscensions/releases/latest)
+2. Place the unzipped contents in `Slay the Spire 2/mods/GlutonsAscensions/`
+
+## Planned Features
+
+- Add colored terms to ascension descriptions
+
+## Notes
+
+- Ascension functionality is done pretty much exclusively through Harmony patches, but would be much better as an `AscensionModel` class that extends `AbstractModel`, in the same way as relics and run modifiers

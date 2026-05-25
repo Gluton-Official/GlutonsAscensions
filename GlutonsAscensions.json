@@ -1,8 +1,8 @@
 {
   "id": "GlutonsAscensions",
-  "name": "GlutonsAscensions",
+  "name": "Gluton's Ascensions",
   "author": "Gluton",
-  "description": "STS2 mod that adds 10 new ascensions",
+  "description": "Adds 10 new ascensions",
   "version": "v1.0.0",
   "has_pck": true,
   "has_dll": true,

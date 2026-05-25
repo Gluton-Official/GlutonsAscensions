@@ -1,5 +1,4 @@
 using BaseLib.Config;
-using BaseLib.Patches.Saves;
 using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Modding;
@@ -17,9 +16,10 @@ public partial class GlutonsAscensionsMod : Node {
     public static string ModResource(string resourceName) => $"res://{ModId}/{resourceName}";
 
     public static void Initialize() {
-        ModConfigRegistry.Register(ModId, new GlutonsAscensionsConfig());
-
         Harmony harmony = new(ModId);
         harmony.PatchAll();
+        
+        // Register config after patching since we patch some BaseLib config methods
+        ModConfigRegistry.Register(ModId, new GlutonsAscensionsConfig());
     }
 }

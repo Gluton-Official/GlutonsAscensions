@@ -1,4 +1,5 @@
 using System.Reflection;
+using BaseLib.Utils;
 using GlutonsAscensions.Helpers;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -6,12 +7,16 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.Saves.Runs;
 
 namespace GlutonsAscensions.Patches;
 
 [HarmonyPatch]
 public class LockedInPatches {
+    public static readonly SavedSpireField<CardModel, bool> IsEternal = new (() => false, $"{GlutonsAscensionsMod.ModId}_IsEternal");
+    
     [HarmonyPatch(typeof(AncientEventModel), nameof(AncientEventModel.Done))]
     [HarmonyPrefix]
     static void FinalizeStartingDeckAsEternal(AncientEventModel __instance) {
@@ -19,22 +24,46 @@ public class LockedInPatches {
         
         foreach (var card in __instance.Owner?.Deck.Cards ?? []) {
             card.AddKeyword(CardKeyword.Eternal);
+            IsEternal[card] = true;
+        }
+    }
+    
+    [HarmonyPatch(typeof(ArchaicTooth), nameof(ArchaicTooth.GetTranscendenceStarterCard))]
+    [HarmonyPostfix]
+    static void RemoveEternalBeforeTranscending(ref CardModel? __result) {
+        if (!GlutonsAscensionLevel.LockedIn.HasAscension()) return;
+
+        __result?.RemoveKeyword(CardKeyword.Eternal);
+    }
+    
+    [HarmonyPatch(typeof(ArchaicTooth), nameof(ArchaicTooth.GetTranscendenceTransformedCard))]
+    [HarmonyPostfix]
+    static void AddEternalAfterTranscending(CardModel starterCard, ref CardModel __result) {
+        if (!GlutonsAscensionLevel.LockedIn.HasAscension()) return;
+
+        if (IsEternal[starterCard]) {
+            starterCard.AddKeyword(CardKeyword.Eternal);
+            __result.AddKeyword(CardKeyword.Eternal);
+            IsEternal[__result] = true;
         }
     }
 
-    // Cards don't save added keywords, since they are usually added just during combat,
-    // so their Eternal keyword has to be re-added when loading a run
-    [HarmonyPatch(typeof(RunState), nameof(RunState.FromSerializable))]
+    [HarmonyPatch(typeof(RunState), nameof(RunState.CloneCard))]
     [HarmonyPostfix]
-    static void MakeFloor1CardsEternal(RunState __result) {
-        if (__result.AscensionLevel < GlutonsAscensionLevel.LockedIn.Level()) return;
+    static void PreserveEternalForClonedCard(CardModel mutableCard, ref CardModel __result) {
+        if (!GlutonsAscensionLevel.LockedIn.HasAscension()) return;
 
-        foreach (var player in __result.Players) {
-            foreach (var card in player.Deck.Cards) {
-                if (card.FloorAddedToDeck == 1) {
-                    card.AddKeyword(CardKeyword.Eternal);
-                }
-            }
+        if (mutableCard.Keywords.Contains(CardKeyword.Eternal)) {
+            __result.AddKeyword(CardKeyword.Eternal);
+            IsEternal[__result] = true;
+        }
+    }
+    
+    [HarmonyPatch(typeof(CardModel), nameof(CardModel.FromSerializable))]
+    [HarmonyPostfix]
+    static void AddEternalWhenLoadingCard(ref CardModel __result) {
+        if (IsEternal[__result]) {
+            __result.AddKeyword(CardKeyword.Eternal);
         }
     }
     

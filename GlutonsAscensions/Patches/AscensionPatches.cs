@@ -169,7 +169,7 @@ public static class AscensionPatches {
 
     [HarmonyPatch(typeof(ProgressState), nameof(ProgressState.ClampCharacterStatsFields))]
     [HarmonyTranspiler]
-    static IEnumerable<CodeInstruction> PatchClampCharacterStatsAcensionFields(IEnumerable<CodeInstruction> instructions) {
+    static IEnumerable<CodeInstruction> PatchClampCharacterStatsAscensionFields(IEnumerable<CodeInstruction> instructions) {
         var codeMatcher = new CodeMatcher(instructions);
 
         // if (stats.MaxAscension > 10)
@@ -277,5 +277,26 @@ public static class AscensionPatches {
             .ModifyMaxAscensionsAllowedConstant();
 
         return codeMatcher.Instructions();
+    }
+
+    [HarmonyPatch(typeof(UnlockConsoleCmd), nameof(UnlockConsoleCmd.UnlockAscensions))]
+    [HarmonyPrefix]
+    static bool AddAscensionParameter(List<string>? ascensions) {
+        if (ascensions is null) return PrefixRunOriginal;
+
+        if (ascensions.FirstOrDefault() is { } ascension &&
+            int.TryParse(ascension, out var ascensionLevel) &&
+            ascensionLevel <= GlutonsAscensionLevel.MaxAscensionAllowed
+        ) {
+            var progress = SaveManager.Instance.Progress;
+            progress.MaxMultiplayerAscension = Math.Max(progress.MaxMultiplayerAscension, ascensionLevel);
+        
+            foreach (var character in ModelDb.AllCharacters) {
+                var characterStats = progress.GetOrCreateCharacterStats(character.Id);
+                characterStats.MaxAscension = Math.Max(characterStats.MaxAscension, ascensionLevel);
+            }
+        }
+        
+        return PrefixSkipOriginal;
     }
 }
