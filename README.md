@@ -2,6 +2,8 @@
 
 STS2 mod that adds 10 new ascensions.
 
+[Nexus Mods](https://www.nexusmods.com/games/slaythespire2/mods/1009)
+
 ## Ascensions
 
 | Level | Ascension       | Description                                                    | Notes                                                                                                                                    |
