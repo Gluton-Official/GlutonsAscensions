@@ -1,3 +1,7 @@
+![Mod Banner](assets/mod_banner.png)
+
+
+
 # Gluton's Ascensions
 
 STS2 mod that adds 10 new ascensions.
@@ -14,7 +18,7 @@ STS2 mod that adds 10 new ascensions.
 | 14    | Empty Flasks    | Potion rewards may be empty.                                       | 50% chance                                                                                                                               |
 | 15    | Short Supply    | Ancients only offer 2 relics.                                      |                                                                                                                                          |
 | 16    | Slim Pickings   | Rewards from Elites have 1 less card.                              |                                                                                                                                          |
-| 17    | Plundered       | Marked Treasure rooms are empty.                                   | Spoils chest still contains bonus gold, Silver Crucible only affects non-marked Treasure rooms                                           |
+| 17    | Plundered       | Marked Treasure rooms are empty.                                   | Spoils chest still contains bonus gold, Silver Crucible will only affect non-marked Treasure rooms                                       |
 | 18    | Cold Comfort    | Ancients only heal 20% of your missing HP between acts.            | Excludes Neow (Act 1)                                                                                                                    |
 | 19    | Unprepared      | Draw 1 less card at the start of each combat.                      |                                                                                                                                          |
 | 20    | Locked-In       | Your starting deck gains Eternal.                                  | Includes all cards gained during Neow/Floor 1, some events and their options are disabled if entire deck is eternal (may encounter bugs) |
@@ -45,7 +49,6 @@ STS2 mod that adds 10 new ascensions.
 
 ## Planned Features
 
-- Add colored terms to ascension descriptions
 - Beta branch support
 
 ## Notes
