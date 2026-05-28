@@ -10,7 +10,9 @@
         <PathMap>$(AppOutputBase)=.\</PathMap>
         <GodotDisabledSourceGenerators>GodotPluginsInitializer</GodotDisabledSourceGenerators>
         <LangVersion>default</LangVersion>
-        <PckPackerSourceDir>GlutonsAscensionsResources/</PckPackerSourceDir>
+        <ModManifest>$(AssemblyName).json</ModManifest>
+        <ResourcesDir>$(AssemblyName)Resources</ResourcesDir>
+        <PckPackerSourceDir>$(ResourcesDir)/</PckPackerSourceDir>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -38,17 +40,16 @@
         <PackageReference Include="Alchyr.Sts2.BaseLib" Version="3.1.6" PrivateAssets="All" />
         <PackageReference Include="Krafs.Publicizer" Version="2.3.0" PrivateAssets="All"/>
         <PackageReference Include="Alchyr.Sts2.ModAnalyzers" Version="*"/>
-        <!-- Generates a .pck file when building if only using simple assets. May not work on all setups. Uncomment to test. -->
         <PackageReference Include="BSchneppe.StS2.PckPacker" Version="0.1.1" PrivateAssets="All" /> 
-        <AdditionalFiles Include="GlutonsAscensionsResources/localization/**/*.json"/> <!-- Used by analyzer -->
+        <AdditionalFiles Include="$(ResourcesDir)/localization/**/*.json"/> <!-- Used by analyzer -->
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Remove="GlutonsAscensionsResources/**"/>
+        <Compile Remove="$(ResourcesDir)/**"/>
         <Compile Remove="materials/**"/>
         <Compile Remove="shaders/**"/>
         <Compile Remove="images/**"/>
-        <EmbeddedResource Remove="GlutonsAscensionsResources/**"/>
+        <EmbeddedResource Remove="$(ResourcesDir)/**"/>
         <EmbeddedResource Remove="materials/**"/>
         <EmbeddedResource Remove="shaders/**"/>
         <EmbeddedResource Remove="images/**"/>
@@ -57,33 +58,14 @@
     <ItemGroup>
         <None Condition="Exists('Directory.Build.props')" Include="Directory.Build.props"/>
         <None Include=".gitignore"/>
-        <None Include="GlutonsAscensions.json"/>
+        <None Include="$(ModManifest)"/>
         <None Include="project.godot"/>
-        <None Include="GlutonsAscensionsResources/**"/>
+        <None Include="$(ResourcesDir)/**"/>
     </ItemGroup>
 
     <Target Name="CheckDependencyPaths">
-        <Error
-                Text=" Slay the Spire 2 data not found at path '$(Sts2DataDir)'"
-                Condition="'$(Sts2DataDir)' == '' or !Exists('$(Sts2DataDir)')"/>
-    </Target>
-
-    <Target Name="CopyToModsFolderOnBuild" AfterTargets="PostBuildEvent">
-        <Message Text="Copying .dll and manifest to mods folder." Importance="high"/>
-        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/"/>
-        <Copy SourceFiles="$(AssemblyName).json" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/"/>
-        <Copy SourceFiles="$(TargetDir)$(TargetName).pdb" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/"/>
-    </Target>
-
-    <Target Name="CopyQuickPck" AfterTargets="PackPck" Condition="Exists('$(PckPackerOutputPath)') And '$(PckPackerSkipped)' != 'true'">
-        <Message Text="Copying quick .pck to mods folder." Importance="high"/>
-        <Copy SourceFiles="$(PckPackerOutputPath)"
-              DestinationFolder="$(ModsPath)/$(MSBuildProjectName)"/>
-    </Target>
-
-    <Target Name="NeedGodotForPublish" BeforeTargets="Publish">
-        <Error Text="Godot path must be set up before publishing; Godot not found at path '$(GodotPath)'. Check Directory.Build.props file."
-               Condition="'$(GodotPath)' == '' or !Exists('$(GodotPath)')"/>
+        <Error Text="Slay the Spire 2 data not found at path '$(Sts2DataDir)'"
+               Condition="'$(Sts2DataDir)' == '' or !Exists('$(Sts2DataDir)')"/>
     </Target>
 
     <ItemGroup>
@@ -92,12 +74,39 @@
 
     <ItemGroup>
         <Content Include="README.md"/>
+        <Content Include="Sts2PathDiscovery.props"/>
     </ItemGroup>
+    
+    <Target Name="Collect" AfterTargets="PackPck">
+        <PropertyGroup>
+            <ManifestContent>$([System.IO.File]::ReadAllText('$(AssemblyName).json'))</ManifestContent>
+            <Version>$([System.Text.RegularExpressions.Regex]::Match('$(ManifestContent)', '"version":\s*"v([^"]+)').Groups[1].Value)</Version>
+        </PropertyGroup>
+        
+        <CreateProperty Value="$(Version)">
+            <Output TaskParameter="Value" PropertyName="Version" />
+        </CreateProperty>
 
-    <Target Name="GodotPublish" AfterTargets="Publish" Condition="'$(GodotPath)' != '' and Exists('$(GodotPath)') and '$(IsInnerGodotExport)' != 'true'" Inputs="@(GodotResourceFiles)" Outputs="$(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck">
-        <Message Text="Exporting Godot .pck to mods folder" Importance="high"/>
-        <Exec Command="&quot;$(GodotPath)&quot; --headless --export-pack &quot;BasicExport&quot; &quot;$(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck&quot;"
-              EnvironmentVariables="IsInnerGodotExport=true;MSBUILDDISABLENODEREUSE=1"
-              ContinueOnError="WarnAndContinue"/>
+        <Message Text="Collecting .dll, .json, and .pck for v$(Version)" Importance="high"/>
+
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)"/>
+        <Copy SourceFiles="$(ModManifest)" DestinationFolder="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)"/>
+        <Copy SourceFiles="$(PckPackerOutputPath)"
+              DestinationFolder="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)"
+              Condition="Exists('$(PckPackerOutputPath)') And '$(PckPackerSkipped)' != 'true'"/>
+    </Target>
+    
+    <Target Name="CopyToMods" AfterTargets="Collect">
+        <ItemGroup>
+            <ModFiles Include="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)/**"/>
+        </ItemGroup>
+        
+        <Copy SourceFiles="@(ModFiles)" DestinationFolder="$(ModsPath)$(MSBuildProjectName).$(Version)/%(RecursiveDir)"/>
+    </Target>
+    
+    <Target Name="Zip" AfterTargets="Collect">
+        <ZipDirectory SourceDirectory="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)" 
+                      DestinationFile="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version).zip"
+                      Overwrite="true"/>
     </Target>
 </Project>
