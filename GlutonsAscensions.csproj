@@ -77,6 +77,11 @@
         <Content Include="Sts2PathDiscovery.props"/>
     </ItemGroup>
     
+    <Target Name="CleanOut" BeforeTargets="Collect">
+        <Message Text="Cleaning 'out' dir" Importance="high"/>
+        <RemoveDir Directories="$(MSBuildProjectDirectory)/out"/>
+    </Target>
+    
     <Target Name="Collect" AfterTargets="PackPck">
         <PropertyGroup>
             <ManifestContent>$([System.IO.File]::ReadAllText('$(AssemblyName).json'))</ManifestContent>
@@ -94,6 +99,15 @@
         <Copy SourceFiles="$(PckPackerOutputPath)"
               DestinationFolder="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)"
               Condition="Exists('$(PckPackerOutputPath)') And '$(PckPackerSkipped)' != 'true'"/>
+    </Target>
+    
+    <Target Name="RemoveOldMod" BeforeTargets="CopyToMods">
+        <ItemGroup>
+            <OldModDir Include="$([System.IO.Directory]::GetDirectories('$(ModsPath)', '$(MSBuildProjectName)*'))"/>
+        </ItemGroup>
+        
+        <Message Text="Deleting old mod dir: @(OldModDir)" Importance="high"/>
+        <RemoveDir Directories="@(OldModDir)"/>
     </Target>
     
     <Target Name="CopyToMods" AfterTargets="Collect">
