@@ -49,7 +49,7 @@ public class TornRugPatches {
         if (inventory.CharacterCardEntries.Count != 3) {
             var ascensionLevel = GlutonsAscensionLevel.TornRug.Level();
             var ascensionName = GlutonsAscensionLevel.TornRug.FormattedName();
-            Logger.Error( $"Merchant inventory has the incorrect number of colored card for Ascenion {ascensionLevel} ({ascensionName}): {inventory.CharacterCardEntries.Count}, expected 3");
+            Logger.Error($"Merchant inventory has the incorrect number of colored card for Ascension {ascensionLevel} ({ascensionName}): {inventory.CharacterCardEntries.Count}, expected 3");
             return;
         }
 

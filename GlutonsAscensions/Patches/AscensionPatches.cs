@@ -2,6 +2,7 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using GlutonsAscensions.Helpers;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.DevConsole;
 using MegaCrit.Sts2.Core.DevConsole.ConsoleCommands;
 using MegaCrit.Sts2.Core.Entities.Ascension;
 using MegaCrit.Sts2.Core.Helpers;
@@ -51,6 +52,7 @@ public static class AscensionPatches {
     [HarmonyPatch(typeof(ModelDb), nameof(ModelDb.Init))]
     [HarmonyPostfix]
     static void InitPostfix() {
+        // Initialize new ascension levels after BaseLib initializes CustomEnum fields
         GlutonsAscensionLevel.Initialize();
     }
 
@@ -282,21 +284,79 @@ public static class AscensionPatches {
     [HarmonyPatch(typeof(UnlockConsoleCmd), nameof(UnlockConsoleCmd.UnlockAscensions))]
     [HarmonyPrefix]
     static bool AddAscensionParameter(List<string>? ascensions) {
-        if (ascensions is null) return PrefixRunOriginal;
+        if (ascensions is null || ascensions.Count == 0) return PrefixRunOriginal;
 
-        if (ascensions.FirstOrDefault() is { } ascension &&
-            int.TryParse(ascension, out var ascensionLevel) &&
-            ascensionLevel <= GlutonsAscensionLevel.MaxAscensionAllowed
-        ) {
-            var progress = SaveManager.Instance.Progress;
-            progress.MaxMultiplayerAscension = Math.Max(progress.MaxMultiplayerAscension, ascensionLevel);
+        if (!int.TryParse(ascensions[0], out var ascensionLevel)) {
+            throw new ArgumentException($"[GlutonsAscensions] Invalid ascension level ({ascensions[0]}), expected integer");
+        }
+        if (ascensionLevel > GlutonsAscensionLevel.MaxAscensionAllowed) {
+            throw new ArgumentException($"[GlutonsAscensions] Ascension level ({ascensionLevel}) is greater than the maximum allowed ({GlutonsAscensionLevel.MaxAscensionAllowed})");
+        }
+
+        var progress = SaveManager.Instance.Progress;
         
+        if (ascensions.Count > 1) {
+            var target = ascensions[1];
+            if (target == "MULTIPLAYER") {
+                progress.MaxMultiplayerAscension = Math.Max(progress.MaxMultiplayerAscension, ascensionLevel);
+            } else if (ModelDb.AllCharacters.FirstOrDefault(character => character.Id.Entry == target) is { } targetCharacter) {
+                var characterStats = progress.GetOrCreateCharacterStats(targetCharacter.Id);
+                characterStats.MaxAscension = Math.Max(characterStats.MaxAscension, ascensionLevel);
+            } else {
+                throw new ArgumentException($"[GlutonsAscensions] Invalid target character ({target}), expected MULTIPLAYER or character ID");
+            }
+        } else {
+            progress.MaxMultiplayerAscension = Math.Max(progress.MaxMultiplayerAscension, ascensionLevel);
+            
             foreach (var character in ModelDb.AllCharacters) {
                 var characterStats = progress.GetOrCreateCharacterStats(character.Id);
                 characterStats.MaxAscension = Math.Max(characterStats.MaxAscension, ascensionLevel);
             }
         }
-        
+
         return PrefixSkipOriginal;
+    }
+
+    [HarmonyPatch(typeof(UnlockConsoleCmd), nameof(UnlockConsoleCmd.GetArgumentCompletions))]
+    [HarmonyPrefix]
+    static bool GetArgumentCompletionsPrefix(UnlockConsoleCmd __instance, string[] args, ref CompletionResult __result) {
+        if (!__instance.CmdName.Equals("unlock", StringComparison.OrdinalIgnoreCase) || 
+            args.Length < 2 ||
+            !args[0].Equals("ascensions", StringComparison.OrdinalIgnoreCase))
+        { 
+            return PrefixRunOriginal;
+        }
+        
+        GlutonsAscensionsMod.Logger.Info($"GetArgumentCompletions({__instance.CmdName}, {string.Join(", ", args)})");
+
+        switch (args.Length) {
+            case 2: {
+                var ascensionLevel = args[1];
+                __result = new CompletionResult {
+                    Candidates = Enumerable.Range(1, GlutonsAscensionLevel.MaxAscensionAllowed)
+                        .Select(i => i.ToString())
+                        .Where(s => s.StartsWith(ascensionLevel))
+                        .ToList(),
+                    Type = CompletionType.Argument,
+                    ArgumentContext = __instance.CmdName,
+                };
+                return PrefixSkipOriginal;
+            }
+            case 3: {
+                var target = args[2];
+                __result = new CompletionResult {
+                    Candidates = ModelDb.AllCharacters
+                        .Select(c => c.Id.Entry)
+                        .AddItem("MULTIPLAYER")
+                        .Where(s => s.StartsWith(target))
+                        .ToList(),
+                    Type = CompletionType.Argument,
+                    ArgumentContext = __instance.CmdName,
+                };
+                return PrefixSkipOriginal;
+            }
+            default:
+                return PrefixRunOriginal;
+        }
     }
 }

@@ -9,7 +9,6 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Runs;
-using MegaCrit.Sts2.Core.Saves.Runs;
 
 namespace GlutonsAscensions.Patches;
 
@@ -103,7 +102,7 @@ public class LockedInPatches {
 
     [HarmonyPatch(typeof(EventModel), "SetEventState")]
     [HarmonyPostfix]
-    static void EventPostfix(EventModel __instance) {
+    static void DisableTrialNondescriptInnocentOption(EventModel __instance) {
         if (!GlutonsAscensionLevel.LockedIn.HasAscension()) return;
         if (__instance is not Trial) return;
         
@@ -122,7 +121,7 @@ public class LockedInPatches {
 [HarmonyPatch]
 public class EventPatches {
     private static readonly Dictionary<Type, EventRequirements> _disallowedEvents = new() {
-        [typeof(LuminousChoir)] = new EventRequirements { RemovableCards = 2, Gold = null, Any = true },
+        [typeof(LuminousChoir)] = new EventRequirements { RemovableCards = 2, Gold = null, MeetAny = true },
         [typeof(Symbiote)] = new EventRequirements { RemovableCards = 1 },
     };
 
@@ -172,17 +171,14 @@ internal class EventRequirements {
         }
     }
     
-    public bool Any { get; init; }
+    public bool MeetAny { get; init; }
 
     public bool MetBy(EventModel eventModel) => eventModel.Owner?.RunState.Players.All(player => MetBy(player, eventModel)) ?? true;
     public bool MetBy(Player player, EventModel eventModel) {
         if (_hasRemovableCardsRequirement) {
             var meetsRemovableCardRequirement = player.Deck.RemovableCardCount() >= RemovableCards;
-            switch (meetsRemovableCardRequirement) {
-                case true when Any:
-                    return true;
-                case false when !Any:
-                    return false;
+            if (meetsRemovableCardRequirement == MeetAny) {
+                return meetsRemovableCardRequirement;
             }
         }
 

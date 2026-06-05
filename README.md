@@ -23,14 +23,12 @@ STS2 mod that adds 10 new ascensions.
 | 19    | Unprepared      | Draw 1 less card at the start of each combat.                      |                                                                                                                                          |
 | 20    | Locked-In       | Your starting deck gains Eternal.                                  | Includes all cards gained during Neow/Floor 1, some events and their options are disabled if entire deck is eternal (may encounter bugs) |
 
-> [!IMPORTANT]  
-> You can unlock Ascension 11 and following ascensions by winning a run on the previous ascension.
->
-> If you have already completed Ascension 10, selecting Unlock for Ascension 11 in the Mod Configuration menu
-> will unlock Ascension 11 for all characters and in multiplayer only if they already have Ascension 10 unlocked.
->
-> If you want to unlock all ascensions, run `unlock ascensions` in the dev console,
-> or `unlock ascensions <level>` to unlock up to a specific ascension level.
+> [!IMPORTANT]
+> 
+> There are a few ways to unlock Ascension 11+:
+> 1. Winning a run on the previous ascension
+> 2. Selecting Unlock for Ascension 11 in the Mod Configuration menu (applies to any character or multiplayer if already at ascension 10)
+> 3. Running `unlock ascensions [<level:int>] [<character|multiplayer>] ` in the dev console (completions work)
 
 ## Disclaimers
 

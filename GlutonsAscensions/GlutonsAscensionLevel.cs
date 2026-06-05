@@ -55,7 +55,7 @@ public static class GlutonsAscensionLevel {
     internal static int MaxAscensionAllowed => LastGlutonAscensionLevel;
 
     private static readonly Dictionary<AscensionLevel, int> _ascensionToLevelMap = new();
-    private static readonly Dictionary<int, AscensionLevel> _levelToAScensionMap = new();
+    private static readonly Dictionary<int, AscensionLevel> _levelToAscensionMap = new();
     
     private static readonly Dictionary<AscensionLevel, string> _ascensionNames = new();
 
@@ -76,7 +76,7 @@ public static class GlutonsAscensionLevel {
         Values.Add(ascension);
         _ascensionNames[ascension] = name;
         _ascensionToLevelMap[ascension] = level;
-        _levelToAScensionMap[level] = ascension;
+        _levelToAscensionMap[level] = ascension;
     }
 
     internal static void UpdateMaxAscensionAllowed(ref int maxAscensionAllowed) {
@@ -113,7 +113,7 @@ public static class GlutonsAscensionLevel {
 
     public static AscensionLevel? LevelToAscension(int level) {
         AssertInitialized();
-        return IsGlutonsAscensionLevel(level) && _levelToAScensionMap.TryGetValue(level, out var ascension) ? ascension : null;
+        return IsGlutonsAscensionLevel(level) && _levelToAscensionMap.TryGetValue(level, out var ascension) ? ascension : null;
     }
 
     public static string? NameOf(AscensionLevel ascension) {
