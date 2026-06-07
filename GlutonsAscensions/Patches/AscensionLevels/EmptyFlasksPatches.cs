@@ -4,7 +4,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Rewards;
 
-namespace GlutonsAscensions.Patches;
+namespace GlutonsAscensions.Patches.AscensionLevels;
 
 [HarmonyPatch]
 public class EmptyFlasksPatches {

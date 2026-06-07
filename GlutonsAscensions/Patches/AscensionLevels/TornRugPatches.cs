@@ -6,7 +6,7 @@ using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
 
-namespace GlutonsAscensions.Patches;
+namespace GlutonsAscensions.Patches.AscensionLevels;
 
 using static GlutonsAscensionsMod;
 using static HarmonyExtensions;

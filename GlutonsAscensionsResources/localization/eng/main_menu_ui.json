@@ -1,0 +1,7 @@
+{
+  "GLUTONSASCENSIONS-UNLOCK_ASCENSION_ARROW.description": "Unlock [b]Ascension [blue]{Level}[/blue][/b] for {Target}",
+  "GLUTONSASCENSIONS-CONFIRM_UNLOCK_ASCENSION_POPUP.title": "Wait!",
+  "GLUTONSASCENSIONS-CONFIRM_UNLOCK_ASCENSION_POPUP.body": "Are you sure you want to unlock [b]Ascension [blue]{Level}[/blue][/b] for {Target}?",
+  "GLUTONSASCENSIONS-CONFIRM_UNLOCK_ASCENSION_POPUP.no": "No",
+  "GLUTONSASCENSIONS-CONFIRM_UNLOCK_ASCENSION_POPUP.yes": "Yes"
+}

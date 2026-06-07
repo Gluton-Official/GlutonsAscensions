@@ -3,7 +3,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Hooks;
 
-namespace GlutonsAscensions.Patches;
+namespace GlutonsAscensions.Patches.AscensionLevels;
 
 [HarmonyPatch]
 public class UnpreparedPatches {

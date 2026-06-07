@@ -3,7 +3,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Random;
 
-namespace GlutonsAscensions.Patches;
+namespace GlutonsAscensions.Patches.AscensionLevels;
 
 using static HarmonyExtensions;
 

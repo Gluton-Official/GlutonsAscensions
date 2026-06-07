@@ -10,11 +10,11 @@ using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Runs;
 
-namespace GlutonsAscensions.Patches;
+namespace GlutonsAscensions.Patches.AscensionLevels;
 
 [HarmonyPatch]
 public class LockedInPatches {
-    public static readonly SavedSpireField<CardModel, bool> IsEternal = new (() => false, $"{GlutonsAscensionsMod.ModId}_IsEternal");
+    private static readonly SavedSpireField<CardModel, bool> IsEternal = new (() => false, $"{GlutonsAscensionsMod.ModId}_IsEternal");
     
     [HarmonyPatch(typeof(AncientEventModel), nameof(AncientEventModel.Done))]
     [HarmonyPrefix]

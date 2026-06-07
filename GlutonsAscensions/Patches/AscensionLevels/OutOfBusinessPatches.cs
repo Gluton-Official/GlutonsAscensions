@@ -3,7 +3,7 @@ using GlutonsAscensions.Helpers;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Map;
 
-namespace GlutonsAscensions.Patches;
+namespace GlutonsAscensions.Patches.AscensionLevels;
 
 [HarmonyPatch]
 public class OutOfBusinessPatches {
