@@ -3,7 +3,7 @@
   "name": "Gluton's Ascensions",
   "author": "Gluton",
   "description": "Adds 10 new ascensions",
-  "version": "v1.1.0",
+  "version": "v1.2.0",
   "has_pck": true,
   "has_dll": true,
   "dependencies": ["BaseLib"],
