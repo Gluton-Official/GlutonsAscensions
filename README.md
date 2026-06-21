@@ -4,6 +4,7 @@
 
 STS2 mod that adds 10 new ascensions.
 
+[Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3747530530)  
 [Nexus Mods](https://www.nexusmods.com/games/slaythespire2/mods/1009)
 
 ## Ascensions
@@ -26,17 +27,16 @@ STS2 mod that adds 10 new ascensions.
 > There are a few ways to unlock Ascension 11+:
 > 1. Winning a run on the previous ascension
 > 2. Confirm unlocking Ascension 11 in the ascension select menu
-> 3. Running `unlock ascensions [<level:int>] [<character|multiplayer>] ` in the dev console
+> 3. Running `unlock ascensions [<level:int>] [<character>|multiplayer] ` in the dev console
 
 ## Disclaimers
 
-- Currently does not support the beta branch
 - Balance has not been tested
 - Not recommended to use with main save (theoretically nothing should break, but just in case)
 
 ## Requirements
 
-- [BaseLib](https://github.com/Alchyr/BaseLib-StS2/releases/releases) (v3.1.6 or later)
+- [BaseLib](https://github.com/Alchyr/BaseLib-StS2/releases/releases)
 
 ## Installation
 
@@ -45,7 +45,6 @@ STS2 mod that adds 10 new ascensions.
 
 ## Planned Features
 
-- Beta branch support
 - Potentially make multiplayer runs at Ascension 10 and below not require disabling this mod if other players don't have the mod if other players don't have the mod if other players don't have the mod if other players don't have the mod
 
 ## Notes
