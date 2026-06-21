@@ -11,6 +11,7 @@ using MegaCrit.Sts2.Core.Models.Characters;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.HoverTips;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
+using MegaCrit.Sts2.Core.Saves;
 using static GlutonsAscensions.GlutonsAscensionsMod;
 
 namespace GlutonsAscensions.Nodes;
@@ -99,7 +100,7 @@ internal partial class NAscensionLock : TextureRect {
 
         if (CreateHoverTip(ascensionPanel) is { } hoverTip) {
             var hoverTipSet = NHoverTipSet.CreateAndShow(arrowButton, hoverTip, HoverTipAlignment.Right);
-            foreach (var child in hoverTipSet._textHoverTipContainer.GetChildren()) {
+            foreach (var child in hoverTipSet?._textHoverTipContainer.GetChildren() ?? []) {
                 child.GetNodeOrNull<MegaRichTextLabel>("%Description")?.AddThemeFontSizeOverride("bold_font_size", 22);
             }
         }
@@ -152,7 +153,8 @@ internal partial class NAscensionLock : TextureRect {
         
         if (__instance._arrowsVisible &&
             __instance.Ascension == GlutonsAscensionLevel.BaseMaxAscensionAllowed &&
-            __instance.Ascension == __instance._maxAscension
+            __instance._maxAscension == GlutonsAscensionLevel.BaseMaxAscensionAllowed &&
+            (__instance._mode == MultiplayerUiMode.Host) == (SaveManager.Instance.Progress.MaxMultiplayerAscension == GlutonsAscensionLevel.BaseMaxAscensionAllowed)
         ) {
             EnableLock(rightArrow);
         } else {
