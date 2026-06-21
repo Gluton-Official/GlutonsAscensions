@@ -1,0 +1,22 @@
+{
+  "LEVEL_TORNRUG.description": "商人提供的攻击和技能卡牌各减少1张，且不提供打折卡牌。",
+  "LEVEL_TORNRUG.title": "破损的地毯",
+  "LEVEL_OUTOFBUSINESS.description": "带有标记的商人房间在每一幕中仅会出现一次。",
+  "LEVEL_OUTOFBUSINESS.title": "停业",
+  "LEVEL_BARREN.description": "未知房间出现的概率降低。",
+  "LEVEL_BARREN.title": "荒芜",
+  "LEVEL_EMPTYFLASKS.description": "药水奖励可能是空的。",
+  "LEVEL_EMPTYFLASKS.title": "空药瓶",
+  "LEVEL_SHORTSUPPLY.description": "古之民只提供[blue]2[/blue]个遗物。",
+  "LEVEL_SHORTSUPPLY.title": "供应缺",
+  "LEVEL_SLIMPICKINGS.description": "[gold]精英[/gold]怪的奖励卡牌减少1张。",
+  "LEVEL_SLIMPICKINGS.title": "寥寥无几",
+  "LEVEL_PLUNDERED.description": "标记的宝箱房间是空的。",
+  "LEVEL_PLUNDERED.title": "被掠",
+  "LEVEL_COLDCOMFORT.description": "幕间古之民只恢复你[blue]20%[/blue]的缺失生命值。",
+  "LEVEL_COLDCOMFORT.title": "冷酷慰藉",
+  "LEVEL_UNPREPARED.description": "每场战斗开始时抽取的卡牌减少1张。",
+  "LEVEL_UNPREPARED.title": "准备不足",
+  "LEVEL_LOCKEDIN.description": "你的初始卡组获得[red]永恒[/red]属性。",
+  "LEVEL_LOCKEDIN.title": "锁定"
+}
