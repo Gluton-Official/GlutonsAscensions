@@ -10,7 +10,7 @@ public class SlimPickingsPatches {
     [HarmonyPatch(typeof(CardReward), nameof(CardReward.Populate))]
     [HarmonyPostfix]
     static void ReduceEliteCardRewardOptions(CardReward __instance) {
-        if (!GlutonsAscensionLevel.ShortSupply.HasAscension()) return;
+        if (!GlutonsAscensionLevel.SlimPickings.HasAscension()) return;
         if (__instance.Player.RunState.BaseRoom?.RoomType != RoomType.Elite) return;
     
         if (__instance._cards.Count > 0) {
