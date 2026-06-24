@@ -6,6 +6,7 @@ riderModule.iml
 
 .idea/
 .run/
+.aiassistant/
 *.pdn
 *.DotSettings.user
 out/
