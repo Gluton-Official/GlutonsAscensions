@@ -27,6 +27,10 @@ commit_preprocessors = [
 ]
 protect_breaking_commits = false
 commit_parsers = [
+    { message = "^.*build config", skip = true },
+    { message = "^.*changelog", skip = true },
+    { message = "^.*gitignore", skip = true },
+    { message = "^.*README", skip = true },
     { message = "^Add", group = "Added" },
     { message = "^Support", group = "Added" },
     { message = "^Include", group = "Added" },
@@ -35,9 +39,6 @@ commit_parsers = [
     { message = "^Delete", group = "Removed" },
     { message = "^Fix", group = "Fixed" },
     { message = "^Bump", skip = true },
-    { message = "^.*build config", skip = true },
-    { message = "^.*gitignore", skip = true },
-    { message = "^.*README", skip = true },
     { message = "^.*", group = "Changed" },
 ]
 #tag_pattern = "v[0-9].*"
