@@ -1,0 +1,48 @@
+[changelog]
+body = """
+[h1]{{ version }}[/h1]
+{% for group, commits in commits | filter(attribute="merge_commit", value=false) | group_by(attribute="group") -%}
+    [h3]{{ group | upper_first }}[/h3]
+    [list]
+    {% for commit in commits | unique(attribute="message")-%}
+        [*]{{ commit.message | upper_first | trim }}
+    {% endfor-%}
+    [/list]
+{% endfor -%}
+"""
+trim = true
+render_always = false
+postprocessors = [
+    { pattern = '<REPO>', replace = "https://github.com/Gluton-Official/GlutonsAscensions" },
+]
+
+[git]
+conventional_commits = false
+filter_unconventional = false
+commit_preprocessors = [
+    { pattern = '#([0-9]+)', replace = "[#${1}](<REPO>/issues/${1})"},
+    # Check spelling of the commit message using https://github.com/crate-ci/typos.
+    # If the spelling is incorrect, it will be fixed automatically.
+    #{ pattern = '.*', replace_command = 'typos --write-changes -' },
+]
+protect_breaking_commits = false
+commit_parsers = [
+    { message = "^Add", group = "Added" },
+    { message = "^Support", group = "Added" },
+    { message = "^Include", group = "Added" },
+    { message = "^Implement", group = "Added" },
+    { message = "^Remove", group = "Removed" },
+    { message = "^Delete", group = "Removed" },
+    { message = "^Fix", group = "Fixed" },
+    { message = "^Bump", skip = true },
+    { message = "^.*build config", skip = true },
+    { message = "^.*gitignore", skip = true },
+    { message = "^.*README", skip = true },
+    { message = "^.*", group = "Changed" },
+]
+#tag_pattern = "v[0-9].*"
+link_parsers = []
+use_branch_tags = true
+topo_order = false
+sort_commits = "oldest"
+recurse_submodules = false

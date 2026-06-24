@@ -9,4 +9,5 @@ riderModule.iml
 .aiassistant/
 *.pdn
 *.DotSettings.user
+*.log
 out/

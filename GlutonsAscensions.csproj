@@ -13,6 +13,7 @@
         <ModManifest>$(AssemblyName).json</ModManifest>
         <ResourcesDir>$(AssemblyName)Resources</ResourcesDir>
         <PckPackerSourceDir>$(ResourcesDir)/</PckPackerSourceDir>
+        <SteamWorkshopModPath>$(SteamWorkshopUploaderPath)$(MSBuildProjectName)</SteamWorkshopModPath>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -37,11 +38,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Alchyr.Sts2.BaseLib" Version="3.2.1" PrivateAssets="All" />
+        <PackageReference Include="Alchyr.Sts2.BaseLib" Version="3.3.0" PrivateAssets="All" />
         <PackageReference Include="Krafs.Publicizer" Version="2.3.0" PrivateAssets="All"/>
         <PackageReference Include="Alchyr.Sts2.ModAnalyzers" Version="*"/>
         <PackageReference Include="BSchneppe.StS2.PckPacker" Version="0.1.1" PrivateAssets="All" /> 
         <AdditionalFiles Include="$(ResourcesDir)/localization/**/*.json"/> <!-- Used by analyzer -->
+        <PackageReference Include="JetBrains.Annotations" Version="2026.2.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -49,10 +51,12 @@
         <Compile Remove="materials/**"/>
         <Compile Remove="shaders/**"/>
         <Compile Remove="images/**"/>
+        <Compile Remove="audio/**"/>
         <EmbeddedResource Remove="$(ResourcesDir)/**"/>
         <EmbeddedResource Remove="materials/**"/>
         <EmbeddedResource Remove="shaders/**"/>
         <EmbeddedResource Remove="images/**"/>
+        <EmbeddedResource Remove="audio/**"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -100,6 +104,12 @@
               DestinationFolder="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)"
               Condition="Exists('$(PckPackerOutputPath)') And '$(PckPackerSkipped)' != 'true'"/>
     </Target>
+
+    <Target Name="Zip" AfterTargets="Collect">
+        <ZipDirectory SourceDirectory="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)"
+                      DestinationFile="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version).zip"
+                      Overwrite="true"/>
+    </Target>
     
     <Target Name="RemoveOldMod" BeforeTargets="CopyToMods">
         <ItemGroup>
@@ -118,9 +128,54 @@
         <Copy SourceFiles="@(ModFiles)" DestinationFolder="$(ModsPath)$(MSBuildProjectName).$(Version)/%(RecursiveDir)"/>
     </Target>
     
-    <Target Name="Zip" AfterTargets="Collect">
-        <ZipDirectory SourceDirectory="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)" 
-                      DestinationFile="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version).zip"
-                      Overwrite="true"/>
+    <Target Name="UpdateChangelog" AfterTargets="Collect">
+        <PropertyGroup>
+            <ChangelogFile>$(MSBuildProjectDirectory)/out/CHANGELOG.md</ChangelogFile>
+        </PropertyGroup>
+        
+        <Exec Command="git-cliff.exe --latest --config &quot;.config/cliff.md.toml&quot; --output &quot;$(ChangelogFile)&quot;"
+              ContinueOnError="false"/>
+        
+        <Message Text="Generated changelog at: $(ChangelogFile)" Importance="high"/>
+    </Target>
+
+    <Target Name="RemoveOldSteamWorkshopModFolder" BeforeTargets="CopyToSteamWorkshopUploader">
+        <ItemGroup>
+            <ContentFiles Include="$(SteamWorkshopModPath)/content/*.*"/>
+            <ContentDirs Include="$([System.IO.Directory]::GetDirectories('$(SteamWorkshopModPath)/content/', '*'))"/>
+        </ItemGroup>
+        
+        <Message Text="Deleting old uploader content: @(ContentFiles), @(ContentDirs)" Importance="high"/>
+        <Delete Files="@(ContentFiles)"/>
+        <RemoveDir Directories="@(ContentDirs)"/>
+    </Target>
+    
+    <Target Name="CopyToSteamWorkshopUploader" AfterTargets="Collect">
+        <ItemGroup>
+            <ModFiles Include="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)/**"/>
+        </ItemGroup>
+        
+        <Copy SourceFiles="@(ModFiles)" DestinationFolder="$(SteamWorkshopModPath)/content/$(MSBuildProjectName).$(Version)/%(RecursiveDir)"/>
+    </Target>
+    
+    <Target Name="UpdateSteamWorkshopChangelog" BeforeTargets="UploadToSteamWorkshop">
+        <PropertyGroup>
+            <ChangelogFile>$(MSBuildProjectDirectory)/out/CHANGELOG.bbcode</ChangelogFile>
+        </PropertyGroup>
+        
+        <Exec Command="git-cliff.exe --latest --config &quot;.config/cliff.bbcode.toml&quot; --output &quot;$(ChangelogFile)&quot;"
+              ContinueOnError="false"/>
+        
+        <Message Text="Generated changelog at: $(ChangelogFile)" Importance="high"/>
+        
+        <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)/UpdateSteamWorkshopJson.ps1&quot; -WorkshopPath &quot;$(SteamWorkshopModPath)/workshop.json&quot; -ChangelogPath &quot;$(ChangelogFile)&quot;"
+              ContinueOnError="false"
+              Condition="Exists('$(ChangelogFile)')"/>
+    </Target>
+        
+    <Target Name="UploadToSteamWorkshop">
+        <Exec Command="$(SteamWorkshopUploaderPath)ModUploader.exe upload -w &quot;$(SteamWorkshopUploaderPath)$(MSBuildProjectName)&quot;"
+              ContinueOnError="false"
+              Condition="Exists('$(SteamWorkshopModPath)')"/>
     </Target>
 </Project>
