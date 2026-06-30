@@ -37,6 +37,7 @@ commit_parsers = [
     { message = "^Delete", group = "Removed" },
     { message = "^Fix", group = "Fixed" },
     { message = "^Bump", skip = true },
+    { message = "^Clean ?up", skip = true },
     { message = "^.*", group = "Changed" },
 ]
 #tag_pattern = "v[0-9].*"
