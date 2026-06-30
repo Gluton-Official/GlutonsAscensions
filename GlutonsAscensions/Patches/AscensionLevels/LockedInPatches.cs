@@ -14,7 +14,7 @@ namespace GlutonsAscensions.Patches.AscensionLevels;
 
 [HarmonyPatch]
 public class LockedInPatches {
-    private static readonly SavedSpireField<CardModel, bool> IsEternal = new (() => false, $"{GlutonsAscensionsMod.ModId}_IsEternal");
+    private static readonly SavedSpireField<CardModel, bool> IsEternal = new (() => false, GlutonsAscensionsMod.ModNamespace(nameof(IsEternal)));
     
     [HarmonyPatch(typeof(AncientEventModel), nameof(AncientEventModel.Done))]
     [HarmonyPrefix]

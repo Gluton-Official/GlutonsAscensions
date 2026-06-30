@@ -1,8 +1,14 @@
-using BaseLib.Config;
 using Godot;
+using BaseLib.Audio;
+using GlutonsAscensions.Helpers;
+using GlutonsAscensions.Saves;
 using HarmonyLib;
+using JetBrains.Annotations;
 using MegaCrit.Sts2.Core.Localization;
+using MegaCrit.Sts2.Core.Logging;
+using MegaLogger = MegaCrit.Sts2.Core.Logging.Logger;
 using MegaCrit.Sts2.Core.Modding;
+using MegaCrit.Sts2.Core.Saves;
 
 namespace GlutonsAscensions;
 
@@ -10,21 +16,24 @@ namespace GlutonsAscensions;
 public partial class GlutonsAscensionsMod : Node {
     public const string ModId = "GlutonsAscensions";
     
-    private static readonly string LocKey = ModId.ToUpperInvariant();
+    private static readonly string _keyPrefix = ModId.ToUpperInvariant();
 
-    public static MegaCrit.Sts2.Core.Logging.Logger Logger { get; } =
-        new(ModId, MegaCrit.Sts2.Core.Logging.LogType.Generic);
-    
-    // public static readonly SavedSpireField<CharacterModel, int> UnlockedAscensionLevel = new (() => 0, $"{ModId}_UnlockedAscensionLevel");
-    // [SavedProperty]
-    // public static int UnlockedMultiplayerAscensionLevel { get; set; }
+    public static MegaLogger Logger { get; } = new(ModId, LogType.Generic);
 
-    public static string NodeNamespace(string nodeName) => $"{ModId}_{nodeName}";
-    public static string ModResource(string resourceName) => $"res://{ModId}/{resourceName}";
-    public static LocString ModLocString(string locTable, string locEntryKey) => new(locTable, $"{LocKey}-{locEntryKey}");
+    public static string ModNamespace(string key) => $"{ModId}_{key}";
+    public static LocString ModLocString(string locTable, string locEntryKey) => new(locTable, $"{_keyPrefix}-{locEntryKey}");
+    public static string ModResource([PathReference($"~/{ModId}Resources")] string resourceName) => Path.Combine("res://", ModId, resourceName);
+    public static string ModSaveFile(string fileNameWithExtension) => Path.Combine("mods", ModId, fileNameWithExtension);
 
     public static void Initialize() {
         Harmony harmony = new(ModId);
         harmony.PatchAll();
+
+        var migrationManager = SaveManager.Instance._migrationManager;
+        migrationManager.SetMinimumSupportedVersion<AscensionProgress>(1);
+        migrationManager.EnsureVersionSet<AscensionProgress>();
+        Logger.Info($"AscensionProgress save versions - latest: v{migrationManager._latestVersions[typeof(AscensionProgress)]}, minimum: v{migrationManager._minimumSupportedVersions[typeof(AscensionProgress)]}");
+        
+        AscensionProgress.RegisterAsSaveType();
     }
 }
