@@ -38,6 +38,8 @@ commit_parsers = [
     { message = "^Remove", group = "Removed" },
     { message = "^Delete", group = "Removed" },
     { message = "^Fix", group = "Fixed" },
+    { message = "^Rework", group = "Changed" },
+    { message = "^Change", group = "Changed" },
     { message = "^Bump", skip = true },
     { message = "^Clean ?up", skip = true },
     { message = "^.*", group = "Changed" },
