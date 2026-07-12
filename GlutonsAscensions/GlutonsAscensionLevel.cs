@@ -15,7 +15,7 @@ public static class GlutonsAscensionLevel {
     [CustomEnum]
     public static AscensionLevel Barren;
     [CustomEnum]
-    public static AscensionLevel EmptyFlasks;
+    public static AscensionLevel VolatileVials;
     [CustomEnum]
     public static AscensionLevel ShortSupply;
     [CustomEnum]
@@ -40,7 +40,7 @@ public static class GlutonsAscensionLevel {
         nameof(TornRug),
         nameof(OutOfBusiness),
         nameof(Barren),
-        nameof(EmptyFlasks),
+        nameof(VolatileVials),
         nameof(ShortSupply),
         nameof(SlimPickings),
         nameof(Plundered), 

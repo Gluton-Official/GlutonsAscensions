@@ -5,8 +5,8 @@
   "LEVEL_OUTOFBUSINESS.title": "停业",
   "LEVEL_BARREN.description": "未知房间出现的概率降低。",
   "LEVEL_BARREN.title": "荒芜",
-  "LEVEL_EMPTYFLASKS.description": "药水奖励可能是空的。",
-  "LEVEL_EMPTYFLASKS.title": "空药瓶",
+  "LEVEL_VOLATILEVIALS.description": "药水在[blue]3[/blue]场战斗后变为[gold]惰性[/gold]。",
+  "LEVEL_VOLATILEVIALS.title": "挥发性小瓶",
   "LEVEL_SHORTSUPPLY.description": "古之民只提供[blue]2[/blue]个遗物。",
   "LEVEL_SHORTSUPPLY.title": "供应缺",
   "LEVEL_SLIMPICKINGS.description": "[gold]精英[/gold]怪的奖励卡牌减少1张。",
@@ -17,6 +17,6 @@
   "LEVEL_COLDCOMFORT.title": "冷酷慰藉",
   "LEVEL_UNPREPARED.description": "每场战斗开始时抽取的卡牌减少1张。",
   "LEVEL_UNPREPARED.title": "准备不足",
-  "LEVEL_LOCKEDIN.description": "你的初始卡组获得[red]永恒[/red]属性。",
+  "LEVEL_LOCKEDIN.description": "你的初始卡组获得[gold]永恒[/gold]属性。",
   "LEVEL_LOCKEDIN.title": "锁定"
 }

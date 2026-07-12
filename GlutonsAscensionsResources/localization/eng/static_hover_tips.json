@@ -1,0 +1,7 @@
+{
+  "GLUTONSASCENSIONS-VOLATILE_POTION.title": "Volatile",
+  "GLUTONSASCENSIONS-VOLATILE_POTION.description": "Becomes [gold]Inert[/gold] after [blue]{Combats}[/blue] {Combats:plural:combat|combats}.",
+  "GLUTONSASCENSIONS-VOLATILE_POTION.description.0": "Becomes [gold]Inert[/gold] at the end of this combat.",
+  "GLUTONSASCENSIONS-INERT_POTION.title": "Inert",
+  "GLUTONSASCENSIONS-INERT_POTION.description": "Inert potions have no effect when used."
+}

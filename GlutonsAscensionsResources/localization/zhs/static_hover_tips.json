@@ -1,0 +1,7 @@
+{
+  "GLUTONSASCENSIONS-VOLATILE_POTION.title": "挥发性",
+  "GLUTONSASCENSIONS-VOLATILE_POTION.description": "在[blue]{Combats}[/blue]{Combats:plural:场战斗|次战斗}后变为[gold]惰性的[/gold]。",
+  "GLUTONSASCENSIONS-VOLATILE_POTION.description.0": "在此战斗结束时变为[gold]惰性的[/gold]。",
+  "GLUTONSASCENSIONS-INERT_POTION.title": "惰性的",
+  "GLUTONSASCENSIONS-INERT_POTION.description": "惰性的药水在使用时不会产生任何效果。"
+}

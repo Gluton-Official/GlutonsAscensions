@@ -1,11 +1,13 @@
 using System.ComponentModel;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using BaseLib.Patches.Saves;
 using BaseLib.Utils;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Saves;
 
 namespace GlutonsAscensions.Helpers;
@@ -208,6 +210,14 @@ public static class ExtendedSaveExtensions {
             var jsonPropertyNames = customAttributeProvider.GetCustomAttributes(typeof(JsonPropertyNameAttribute), inherit);
             var jsonPropertyName = jsonPropertyNames.FirstOrDefault() as JsonPropertyNameAttribute;
             return jsonPropertyName?.Name;
+        }
+    }
+    
+    extension<TKey, TVal>(SpireField<TKey, TVal> spireField) where TKey : class {
+        public bool Remove(TKey obj) {
+            var table = AccessTools.Field(spireField.GetType(), "_table").GetValue(spireField) as ConditionalWeakTable<TKey, object?>
+                ?? throw new Exception($"[GlutonsAscensions] Unable to get inner _table of {spireField.GetType().FriendlyName}");
+            return table.Remove(obj);
         }
     }
 }

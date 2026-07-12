@@ -127,7 +127,7 @@ public class EventPatches {
 
     [HarmonyTargetMethods]
     static IEnumerable<MethodBase> Events() =>
-        AccessTools.Method(typeof(EventModel), nameof(EventModel.IsAllowed)).FindOverrideMethods();
+        AccessTools.Method(typeof(EventModel), nameof(EventModel.IsAllowed)).FindOverrides();
 
     [HarmonyPostfix]
     static void IsAllowedPostfix(EventModel __instance, ref bool __result) {

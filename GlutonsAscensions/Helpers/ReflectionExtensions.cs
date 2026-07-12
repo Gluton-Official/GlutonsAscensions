@@ -38,21 +38,36 @@ public static class ReflectionExtensions {
         }
     }
 
-    extension(MethodBase? baseMethod) {
-        /// <param name="searchAllTypes">False to only search the Assembly of the base method's declaring type</param>
+    extension(MethodBase baseMethod) {
+        /// <param name="searchAllTypes">If false, only searches the assembly of the base method's declaring type</param>
         /// <returns>The base method and all methods that override it</returns>
-        public IEnumerable<MethodBase> FindOverrideMethods(bool searchAllTypes = false) {
+        public IEnumerable<MethodBase> FindOverrides(bool searchAllTypes = false) {
+            GlutonsAscensionsMod.Logger.Debug($"Searching {(searchAllTypes ? "all assemblies " : "")}for overrides of: {baseMethod?.DeclaringType?.FriendlyName}::{baseMethod?.Name}");
             if (baseMethod is null) yield break;
+            if (baseMethod.HasMethodBody()) {
+                GlutonsAscensionsMod.Logger.Debug("  Including base method");
+                yield return baseMethod;
+            }
+            if (baseMethod.DeclaringType is not { } baseType) {
+                GlutonsAscensionsMod.Logger.Debug("  Declaring type was null, unable to search types");
+                yield break;
+            }
 
-            yield return baseMethod;
-
-            if (baseMethod.DeclaringType is not { } declaringType) yield break;
-        
-            foreach (var method in (searchAllTypes ? AccessTools.AllTypes() : declaringType.Assembly.GetTypes())
-                .Where(type => !type.IsAbstract && declaringType.IsAssignableFrom(type))
-                .Select(type => AccessTools.DeclaredMethod(type, baseMethod.Name))
+            foreach (var method in (searchAllTypes ? AccessTools.AllTypes() : baseType.Assembly.GetTypes())
+                .Where(type => type.IsClass && !type.IsAbstract && type.IsAssignableTo(baseType))
+                .Select(type => {
+                    var method = AccessTools.DeclaredMethod(type, baseMethod.Name);
+                    if (method is null) GlutonsAscensionsMod.Logger.Debug($"  {type.FriendlyName} inherits {baseMethod.Name}");
+                    return method;
+                })
+                .Where(method =>
+                    method is not null &&
+                    method.HasMethodBody() &&
+                    method.GetBaseDefinition() == baseMethod
+                )
             ) {
-                if (method is not null) yield return method;
+                GlutonsAscensionsMod.Logger.Debug($"Found: {method!.DeclaringType?.FriendlyName}::{method.Name}");
+                yield return method;
             }
         }
     }

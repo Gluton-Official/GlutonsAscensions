@@ -5,7 +5,6 @@
 STS2 mod that adds 10 new ascensions.
 
 [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3747530530)  
-[Nexus Mods](https://www.nexusmods.com/games/slaythespire2/mods/1009)
 
 ## Ascensions
 
@@ -14,7 +13,7 @@ STS2 mod that adds 10 new ascensions.
 | 11    | Torn Rug        | The Merchant offers 1 less attack and skill, and no on-sale cards. |                                                                                                                                          |
 | 12    | Out-of-Business | Each act only has 1 marked Merchant room.                          |                                                                                                                                          |
 | 13    | Barren          | Unknown rooms are less common.                                     | Mean and range changed from 12, 10–14 to 10, 8–12                                                                                        |
-| 14    | Empty Flasks    | Potion rewards may be empty.                                       | 50% chance                                                                                                                               |
+| 14    | Volatile Vials  | Potions become Inert after 3 combats.                              | Inert potions have no effect when used.                                                                                                  |
 | 15    | Short Supply    | Ancients only offer 2 relics.                                      |                                                                                                                                          |
 | 16    | Slim Pickings   | Rewards from Elites have 1 less card.                              |                                                                                                                                          |
 | 17    | Plundered       | Marked Treasure rooms are empty.                                   | Spoils chest still contains bonus gold, Silver Crucible will only affect non-marked Treasure rooms                                       |
@@ -31,12 +30,11 @@ STS2 mod that adds 10 new ascensions.
 
 ## Disclaimers
 
-- Balance has not been tested
-- Not recommended to use with main save (theoretically nothing should break, but just in case)
+- Balance has not been thoroughly tested
 
 ## Requirements
 
-- [BaseLib](https://github.com/Alchyr/BaseLib-StS2/releases/releases)
+- [BaseLib](https://github.com/Alchyr/BaseLib-StS2/releases)
 
 ## Installation
 

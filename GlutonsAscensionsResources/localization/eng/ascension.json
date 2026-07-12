@@ -5,8 +5,8 @@
   "LEVEL_OUTOFBUSINESS.title": "Out-of-Business",
   "LEVEL_BARREN.description": "Unknown rooms are less common.",
   "LEVEL_BARREN.title": "Barren",
-  "LEVEL_EMPTYFLASKS.description": "Potion rewards may be empty.",
-  "LEVEL_EMPTYFLASKS.title": "Empty Flasks",
+  "LEVEL_VOLATILEVIALS.description": "Potions become [gold]Inert[/gold] after [blue]3[/blue] combats.",
+  "LEVEL_VOLATILEVIALS.title": "Volatile Vials",
   "LEVEL_SHORTSUPPLY.description": "Ancients only offer [blue]2[/blue] relics.",
   "LEVEL_SHORTSUPPLY.title": "Short Supply",
   "LEVEL_SLIMPICKINGS.description": "Rewards from [gold]Elites[/gold] have 1 less card.",
@@ -17,6 +17,6 @@
   "LEVEL_COLDCOMFORT.title": "Cold Comfort",
   "LEVEL_UNPREPARED.description": "Draw 1 less card at the start of each combat.",
   "LEVEL_UNPREPARED.title": "Unprepared",
-  "LEVEL_LOCKEDIN.description": "Your starting deck gains [red]Eternal[/red].",
+  "LEVEL_LOCKEDIN.description": "Your starting deck gains [gold]Eternal[/gold].",
   "LEVEL_LOCKEDIN.title": "Locked-In"
 }
