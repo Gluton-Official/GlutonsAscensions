@@ -1,13 +1,17 @@
 using System.Reflection;
+using System.Reflection.Emit;
+using BaseLib.Extensions;
 using BaseLib.Utils;
 using GlutonsAscensions.Helpers;
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Models.Relics;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Runs;
 
 namespace GlutonsAscensions.Patches.AscensionLevels;
@@ -19,20 +23,15 @@ public class LockedInPatches {
     [HarmonyPatch(typeof(AncientEventModel), nameof(AncientEventModel.Done))]
     [HarmonyPrefix]
     static void FinalizeStartingDeckAsEternal(AncientEventModel __instance) {
-        if (!GlutonsAscensionLevel.LockedIn.HasAscension() || __instance is not Neow) return;
-        
-        foreach (var card in __instance.Owner?.Deck.Cards ?? []) {
-            card.AddKeyword(CardKeyword.Eternal);
-            IsEternal[card] = true;
-        }
-    }
-    
-    [HarmonyPatch(typeof(ArchaicTooth), nameof(ArchaicTooth.GetTranscendenceStarterCard))]
-    [HarmonyPostfix]
-    static void RemoveEternalBeforeTranscending(ref CardModel? __result) {
         if (!GlutonsAscensionLevel.LockedIn.HasAscension()) return;
 
-        __result?.RemoveKeyword(CardKeyword.Eternal);
+        // Must be first Act
+        if (__instance.Owner?.RunState.CurrentActIndex == 0) {
+            foreach (var card in __instance.Owner?.Deck.Cards ?? []) {
+                card.AddKeyword(CardKeyword.Eternal);
+                IsEternal[card] = true;
+            }
+        }
     }
     
     [HarmonyPatch(typeof(ArchaicTooth), nameof(ArchaicTooth.GetTranscendenceTransformedCard))]
@@ -41,9 +40,74 @@ public class LockedInPatches {
         if (!GlutonsAscensionLevel.LockedIn.HasAscension()) return;
 
         if (IsEternal[starterCard]) {
-            starterCard.AddKeyword(CardKeyword.Eternal);
             __result.AddKeyword(CardKeyword.Eternal);
             IsEternal[__result] = true;
+        }
+    }
+
+    [HarmonyPatch(typeof(ArchaicTooth), nameof(ArchaicTooth.AfterObtained), MethodType.Async)]
+    [HarmonyTranspiler]
+    static IEnumerable<CodeInstruction> AfterObtainedTranspiler(IEnumerable<CodeInstruction> instructions) {
+        var codeMatcher = new CodeMatcher(instructions);
+
+        // CardModel transcendenceStarterCard = archaicTooth.GetTranscendenceStarterCard(archaicTooth.Owner);
+        // 
+        // call         instance class MegaCrit.Sts2.Core.Models.CardModel MegaCrit.Sts2.Core.Models.Relics.ArchaicTooth::GetTranscendenceStarterCard(class MegaCrit.Sts2.Core.Entities.Players.Player)
+        // stloc.2      // transcendenceStarterCard
+        codeMatcher
+            .MatchEndForward(
+                CodeMatch.Calls(AccessTools.Method(typeof(ArchaicTooth), nameof(ArchaicTooth.GetTranscendenceStarterCard))),
+                CodeMatch.StoresLocal()
+            )
+            .ThrowIfInvalid("Could not find call to ArchaicTooth.GetTranscendenceStarterCard followed by a stloc");
+            
+        var transcendenceStarterCardLocalIndex = codeMatcher.Instruction.LocalIndex();
+        
+        // transcendenceStarterCard = LockedInPatches.RemoveEternalBeforeTransform(transcendenceStarterCard);
+        //
+        // ldloc.2      // transcendenceStarterCard
+        // call         RemoveEternalBeforeTransform
+        // stloc.2      // transcendenceStarterCard
+        codeMatcher
+            .InsertAfter(
+                CodeInstruction.LoadLocal(transcendenceStarterCardLocalIndex),
+                CodeInstruction.Call(() => RemoveEternalBeforeTransform(null!)),
+                CodeInstruction.StoreLocal(transcendenceStarterCardLocalIndex)
+            );
+        
+        // CardPileAddResult? nullable = await CardCmd.Transform(transcendenceStarterCard, archaicTooth.GetTranscendenceTransformedCard(transcendenceStarterCard));
+        // 
+        // call         class [System.Runtime]System.Threading.Tasks.Task`1<valuetype [System.Runtime]System.Nullable`1<valuetype MegaCrit.Sts2.Core.Entities.Cards.CardPileAddResult>> MegaCrit.Sts2.Core.Commands.CardCmd::Transform(class MegaCrit.Sts2.Core.Models.CardModel, class MegaCrit.Sts2.Core.Models.CardModel, valuetype MegaCrit.Sts2.Core.Nodes.CommonUi.CardPreviewStyle)
+        codeMatcher
+            .MatchEndForward(
+                CodeMatch.Calls(AccessTools.Method(typeof(CardCmd), nameof(CardCmd.Transform), [typeof(CardModel), typeof(CardModel), typeof(CardPreviewStyle)])),
+                new CodeMatch(OpCodes.Callvirt),
+                CodeMatch.StoresLocal()
+            )
+            .ThrowIfInvalid("Could not find call to CardCmd.Transform followed by a callvirt opcode followed by a stloc");
+        
+        var cardPileAddResultLocalIndex = codeMatcher.Instruction.LocalIndex();
+        
+        codeMatcher
+            .InsertAfterAndAdvance(
+                CodeInstruction.LoadLocal(cardPileAddResultLocalIndex),
+                CodeInstruction.LoadLocal(transcendenceStarterCardLocalIndex),
+                CodeInstruction.Call(() => RemoveStarterCardFromEternalListIfSuccessful(null!, null!))
+            );
+
+        return codeMatcher.Instructions();
+    }
+    
+    private static CardModel? RemoveEternalBeforeTransform(CardModel? card) {
+        if (GlutonsAscensionLevel.LockedIn.HasAscension() && card is not null) {
+            card.RemoveKeyword(CardKeyword.Eternal);
+        }
+        return card;
+    }
+
+    private static void RemoveStarterCardFromEternalListIfSuccessful(CardPileAddResult? result, CardModel card) {
+        if (result is { success: true }) {
+            IsEternal.Remove(card);
         }
     }
 
