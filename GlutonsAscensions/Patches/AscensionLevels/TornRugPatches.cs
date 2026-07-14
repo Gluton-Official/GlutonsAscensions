@@ -55,11 +55,27 @@ public class TornRugPatches {
 
         if (__instance._characterCardContainer is null) return;
 
-        // Remove the left 2 colored cards from the shop
         while (__instance._characterCardContainer.GetChildCount() > inventory.CharacterCardEntries.Count) {
-            var leftMostChild = __instance._characterCardContainer.GetChild(0);
-            __instance._characterCardContainer.RemoveChild(leftMostChild);
-            leftMostChild.QueueFreeSafely();
+            var leftMostColoredCardSlot = __instance._characterCardContainer.GetChild<NMerchantCard>(0);
+            __instance._characterCardContainer.RemoveChildSafely(leftMostColoredCardSlot);
+            leftMostColoredCardSlot.QueueFreeSafely();
         }
+    }
+
+    [HarmonyPatch(typeof(NMerchantCard), nameof(NMerchantCard._ExitTree))]
+    [HarmonyPrefix]
+    static bool _ExitTreePrefix(NMerchantCard __instance) {
+        if (!GlutonsAscensionLevel.TornRug.HasAscension()) return PrefixRunOriginal;
+
+        // Despite _cardEntry not being nullable, if NMerchantCard::FillSlot is never called
+        // (which would be the case when removing the node early like in RemoveColoredCardSlots),
+        // then it will not have been set by the time _ExitTree is called,
+        // thus is a good indication of whether _ExitTree needs to be ran or not
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        if (__instance._cardEntry is null) {
+            return PrefixSkipOriginal;
+        }
+
+        return PrefixRunOriginal;
     }
 }
