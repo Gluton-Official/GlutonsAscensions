@@ -17,7 +17,7 @@ STS2 mod that adds 10 new ascensions.
 | 15    | Short Supply    | Ancients only offer 2 relics.                                      |                                                                                                                                          |
 | 16    | Slim Pickings   | Rewards from Elites have 1 less card.                              |                                                                                                                                          |
 | 17    | Plundered       | Marked Treasure rooms are empty.                                   | Spoils chest still contains bonus gold, Silver Crucible will only affect non-marked Treasure rooms                                       |
-| 18    | Cold Comfort    | Ancients only heal 20% of your missing HP between acts.            | Excludes Neow (Act 1)                                                                                                                    |
+| 18    | Cold Comfort    | Ancients only heal up to 30% of your max HP between acts.          | Max heal is equivalent to base rest site healing.                                                                                        |
 | 19    | Unprepared      | Draw 1 less card at the start of each combat.                      |                                                                                                                                          |
 | 20    | Locked-In       | Your starting deck gains Eternal.                                  | Includes all cards gained during Neow/Floor 1, some events and their options are disabled if entire deck is eternal (may encounter bugs) |
 

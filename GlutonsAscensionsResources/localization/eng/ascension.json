@@ -13,7 +13,7 @@
   "LEVEL_SLIMPICKINGS.title": "Slim Pickings",
   "LEVEL_PLUNDERED.description": "Marked Treasure rooms are empty.",
   "LEVEL_PLUNDERED.title": "Plundered",
-  "LEVEL_COLDCOMFORT.description": "Ancients only heal [blue]20%[/blue] of your missing HP between acts.",
+  "LEVEL_COLDCOMFORT.description": "Ancients only heal up to [blue]30%[/blue] of your max HP between acts.",
   "LEVEL_COLDCOMFORT.title": "Cold Comfort",
   "LEVEL_UNPREPARED.description": "Draw 1 less card at the start of each combat.",
   "LEVEL_UNPREPARED.title": "Unprepared",

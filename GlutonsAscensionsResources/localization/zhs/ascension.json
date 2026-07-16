@@ -13,7 +13,7 @@
   "LEVEL_SLIMPICKINGS.title": "寥寥无几",
   "LEVEL_PLUNDERED.description": "标记的宝箱房间是空的。",
   "LEVEL_PLUNDERED.title": "被掠",
-  "LEVEL_COLDCOMFORT.description": "幕间古之民只恢复你[blue]20%[/blue]的缺失生命值。",
+  "LEVEL_COLDCOMFORT.description": "幕间古之民只恢复最多[blue]30%[/blue]的最大生命值。",
   "LEVEL_COLDCOMFORT.title": "冷酷慰藉",
   "LEVEL_UNPREPARED.description": "每场战斗开始时抽取的卡牌减少1张。",
   "LEVEL_UNPREPARED.title": "准备不足",
