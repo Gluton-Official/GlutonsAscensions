@@ -1,14 +1,16 @@
 using System.Reflection;
+using System.Text;
 using System.Reflection.Emit;
-using BaseLib.Extensions;
 using BaseLib.Utils;
 using GlutonsAscensions.Helpers;
+using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Enchantments;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
@@ -64,7 +66,7 @@ public class LockedInPatches {
         var transcendenceStarterCardLocalIndex = codeMatcher.Instruction.LocalIndex();
         
         // transcendenceStarterCard = LockedInPatches.RemoveEternalBeforeTransform(transcendenceStarterCard);
-        //
+        // 
         // ldloc.2      // transcendenceStarterCard
         // call         RemoveEternalBeforeTransform
         // stloc.2      // transcendenceStarterCard
@@ -132,61 +134,48 @@ public class LockedInPatches {
     
     private static readonly PropertyInfo _isLockedProperty = AccessTools.Property(typeof(EventOption), nameof(EventOption.IsLocked)) ?? throw new Exception("[GlutonsAscensions] Unable to get NumOfShops property");
 
-    private static readonly Dictionary<Type, (string, EventRequirements)> _disablableEvents = new() {
-        [typeof(AromaOfChaos)] = ("LET_GO", new EventRequirements { RemovableCards = 1 }),
-        // [typeof(DenseVegetation)] = ("TRUDGE_ON", new EventRequirements { RemovableCards = 1 }),
-        [typeof(DoorsOfLightAndDark)] = ("DARK", new EventRequirements { RemovableCards = 1 }),
-        [typeof(LuminousChoir)] = ("REACH_INTO_THE_FLESH", new EventRequirements { RemovableCards = 2 }),
-        [typeof(Wellspring)] = ("BATHE", new EventRequirements { RemovableCards = 1 }),
-        [typeof(WhisperingHollow)] = ("HUG", new EventRequirements { RemovableCards = 1 }),
-        [typeof(FieldOfManSizedHoles)] = ("RESIST", new EventRequirements { RemovableCards = 2 }),
-        // [typeof(SpiritGrafter)] = ("REJECTION", new EventRequirements { RemovableCards = 1 }),
-        [typeof(Symbiote)] = ("KILL_WITH_FIRE", new EventRequirements { RemovableCards = 1 }),
-        [typeof(ZenWeaver)] = ("EMOTIONAL_AWARENESS", new EventRequirements { RemovableCards = 1 }),
-        [typeof(ZenWeaver)] = ("ARACHNID_ACUPUNCTURE", new EventRequirements { RemovableCards = 2 }),
+    private static readonly Dictionary<Type, List<(string, EventRequirements)>> _disablableEventOptions = new() {
+        [typeof(AromaOfChaos)] = [("LET_GO", new EventRequirements().RemovableCard())],
+        [typeof(DoorsOfLightAndDark)] = [("DARK", new EventRequirements().RemovableCard())],
+        [typeof(FieldOfManSizedHoles)] = [("RESIST", new EventRequirements().RemovableCards(2))],
+        [typeof(LuminousChoir)] = [("REACH_INTO_THE_FLESH", new EventRequirements().RemovableCards(2))],
+        [typeof(Symbiote)] = [("KILL_WITH_FIRE", new EventRequirements().RemovableCard())],
+        [typeof(Trial)] = [("NONDESCRIPT.options.INNOCENT", new EventRequirements().RemovableCards(2))],
+        [typeof(Wellspring)] = [("BATHE", new EventRequirements().RemovableCard())],
+        [typeof(WhisperingHollow)] = [("HUG", new EventRequirements().RemovableCard())],
+        [typeof(ZenWeaver)] = [
+            ("EMOTIONAL_AWARENESS", new EventRequirements().RemovableCard()),
+            ("ARACHNID_ACUPUNCTURE", new EventRequirements().RemovableCards(2))
+        ],
     };
 
-    [HarmonyPatch(typeof(EventModel), nameof(EventModel.BeginEvent))]
-    [HarmonyPostfix]
-    static void DisableEventOptions(EventModel __instance) {
-        if (!GlutonsAscensionLevel.LockedIn.HasAscension()) return;
-        if (!_disablableEvents.ContainsKey(__instance.GetType())) return;
-        
-        if (__instance.Owner is not { } player) return;
-        
-        var (optionKey, requirements) = _disablableEvents.GetValueSafe(__instance.GetType());
-
-        var option = __instance.CurrentOptions.FirstOrDefault(option => option.TextKey.EndsWith(optionKey));
-        if (option is null) return;
-        
-        if (requirements.MetBy(player, __instance)) return;
-        
-        _isLockedProperty.SetBackingField(option, true);
-    }
-
     [HarmonyPatch(typeof(EventModel), "SetEventState")]
-    [HarmonyPostfix]
-    static void DisableTrialNondescriptInnocentOption(EventModel __instance) {
+    [HarmonyPrefix]
+    static void DisableEventOptions(EventModel __instance, ref IEnumerable<EventOption> eventOptions) {
         if (!GlutonsAscensionLevel.LockedIn.HasAscension()) return;
-        if (__instance is not Trial) return;
+        
+        var eventModelType = __instance.GetType()!;
         
         if (__instance.Owner is not { } player) return;
-        
-        var option = __instance.CurrentOptions.FirstOrDefault(option => option.TextKey.EndsWith("NONDESCRIPT.options.INNOCENT"));
-        if (option is null) return;
-            
-        var requirements = new EventRequirements { RemovableCards = 2 };
-        if (requirements.MetBy(player, __instance)) return;
-            
-        _isLockedProperty.SetBackingField(option, true);
+        if (!_disablableEventOptions.TryGetValue(eventModelType, out var disabledEventOptions)) return;
+
+        var eventOptionsList = eventOptions.ToList();
+        foreach (var (optionKey, requirements) in disabledEventOptions) {
+            var eventOption = eventOptionsList.FirstOrDefault(option => option.TextKey.EndsWith(optionKey));
+            if (eventOption is not null && !eventOption.IsLocked && !requirements.IsMetBy(player, __instance)) {
+                GlutonsAscensionsMod.Logger.Info($"Disabling {eventModelType.Name} option '{optionKey}' for Player {player.Name} because its requirements are not met:{requirements.FormatUnmetRequirements(player, __instance).Indent("  ")}");
+                _isLockedProperty.SetBackingField(eventOption, true);
+            }
+        }
+        eventOptions = eventOptionsList;
     }
 }
 
 [HarmonyPatch]
 public class EventPatches {
     private static readonly Dictionary<Type, EventRequirements> _disallowedEvents = new() {
-        [typeof(LuminousChoir)] = new EventRequirements { RemovableCards = 2, Gold = null, MeetAny = true },
-        [typeof(Symbiote)] = new EventRequirements { RemovableCards = 1 },
+        [typeof(LuminousChoir)] = new EventRequirements().RemovableCards(2),
+        [typeof(Symbiote)] = new EventRequirements().RemovableCard().EnchantableWith<Corrupted>().MeetAny(),
     };
 
     [HarmonyTargetMethods]
@@ -194,63 +183,129 @@ public class EventPatches {
         AccessTools.Method(typeof(EventModel), nameof(EventModel.IsAllowed)).FindOverrides();
 
     [HarmonyPostfix]
-    static void IsAllowedPostfix(EventModel __instance, ref bool __result) {
+    static void IsAllowedPostfix(EventModel __instance, IRunState runState, ref bool __result) {
         if (!GlutonsAscensionLevel.LockedIn.HasAscension()) return;
-        if (!_disallowedEvents.ContainsKey(__instance.GetType())) return;
-
-        var requirements = _disallowedEvents.GetValueSafe(__instance.GetType());
-
-        if (__instance is Symbiote) {
-            var symbioteRequirementsMet = __instance.Owner?.RunState.Players.All(player =>
-                player.Deck.Cards.Any(Symbiote.CanEnchant) || requirements.MetBy(player, __instance));
-            __result = symbioteRequirementsMet ?? true;
-            return;
-        }
         
-        __result = requirements.MetBy(__instance);       
+        var eventModelType = __instance.GetType()!;
+
+        if (!__result) return; // Skip if already not allowed
+        if (!_disallowedEvents.TryGetValue(eventModelType, out var requirements)) return;
+        
+        __result = requirements.IsMetBy(runState.Players, __instance);
+        
+        GlutonsAscensionsMod.Logger.Info($"Checked {eventModelType.Name}, IsAllowed: {__result}");
+
+        if (!__result) {
+            var sb = new StringBuilder($"Not allowing {eventModelType.Name}:");
+            foreach (var player in runState.Players.Where(player => !requirements.IsMetBy(player, __instance))) {
+                sb.Append($"\n  Player {player.Name} does not meet requirements:{requirements.FormatUnmetRequirements(player, __instance).Indent("    ")}");
+            }
+            GlutonsAscensionsMod.Logger.Info(sb.ToString());
+        }
     } 
 }
 
 internal class EventRequirements {
-    private bool _hasRemovableCardsRequirement { get; init; }
-    private bool _hasGoldRequirement { get; init; }
-    private bool _basedOnGoldVar { get; init; }
+    private bool hasRemovableCardsRequirement;
+    private bool hasEnchantableRequirement;
+    private bool hasGoldRequirement;
+    private bool basedOnGoldVar;
 
-    public int RemovableCards {
-        get;
-        init {
-            field = value;
-            _hasRemovableCardsRequirement = true;
-        }
-    }
+    private int removableCards;
+    private int enchantableCards;
+    private EnchantmentModel? enchantment;
+    private int? gold;
+    private bool meetAny;
 
-    public int? Gold {
-        get;
-        init {
-            field = value;
-            _hasGoldRequirement = true;
-            if (value is null) {
-                _basedOnGoldVar = true;
-            }
-        }
+    public EventRequirements RemovableCard() => RemovableCards(1);
+    public EventRequirements RemovableCards(int requiredAmount) {
+        removableCards = requiredAmount;
+        hasRemovableCardsRequirement = true;
+        return this;
     }
     
-    public bool MeetAny { get; init; }
+    public EventRequirements EnchantableCard() => EnchantableCards(1);
+    public EventRequirements EnchantableCards(int requiredAmount) {
+        enchantableCards = requiredAmount;
+        hasEnchantableRequirement = true;
+        return this;
+    }
+    public EventRequirements EnchantableWith<T>(int requiredAmount = 1) where T : EnchantmentModel {
+        enchantableCards = requiredAmount;
+        hasEnchantableRequirement = true;
+        enchantment = ModelDb.Enchantment<T>();
+        return this;
+    }
 
-    public bool MetBy(EventModel eventModel) => eventModel.Owner?.RunState.Players.All(player => MetBy(player, eventModel)) ?? true;
-    public bool MetBy(Player player, EventModel eventModel) {
-        if (_hasRemovableCardsRequirement) {
-            var meetsRemovableCardRequirement = player.Deck.RemovableCardCount() >= RemovableCards;
-            if (meetsRemovableCardRequirement == MeetAny) {
-                return meetsRemovableCardRequirement;
+    public EventRequirements Gold(int requiredAmount) {
+        gold = requiredAmount;
+        hasGoldRequirement = true;
+        basedOnGoldVar = false;
+        return this;
+    }
+    
+    public EventRequirements GoldVar() {
+        gold = null;
+        hasGoldRequirement = true;
+        basedOnGoldVar = true;
+        return this;
+    }
+    
+    public EventRequirements MeetAny() {
+        meetAny = true;
+        return this;
+    }
+
+    public bool IsMetBy(IEnumerable<Player> players, EventModel eventModel) => players.All(player => IsMetBy(player, eventModel));
+    public bool IsMetBy(Player player, EventModel eventModel) {
+        var meetsRequirements = true;
+        
+        if (hasRemovableCardsRequirement) {
+            meetsRequirements &= player.Deck.RemovableCardCount() >= removableCards;
+        }
+        if (meetAny && meetsRequirements) return true;
+
+        if (hasEnchantableRequirement) {
+            meetsRequirements &= player.Deck.Cards.Count(card => card.Enchantment is null && enchantment?.CanEnchant(card) != false) >= enchantableCards;
+        }
+        if (meetAny && meetsRequirements) return true;
+
+        if (hasGoldRequirement) {
+            meetsRequirements &= basedOnGoldVar switch {
+                true when !eventModel.DynamicVars.ContainsKey("Gold") => throw new Exception($"[GlutonsAscensions] Event {eventModel.GetType()} does not have a Gold dynamic variable"),
+                true => player.Gold >= eventModel.DynamicVars.Gold.IntValue,
+                _ => player.Gold >= gold
+            };
+        }
+        
+        return meetsRequirements;
+    }
+
+    public string FormatUnmetRequirements(Player player, EventModel eventModel) {
+        var sb = new StringBuilder();
+        if (hasRemovableCardsRequirement && player.Deck.RemovableCardCount() < removableCards) {
+            sb.Append($"\nRemovable Cards: actual {player.Deck.RemovableCardCount()}, expected >={removableCards}");
+        }
+        if (hasEnchantableRequirement) {
+            var enchantableCardCount = player.Deck.Cards.Count(card => card.Enchantment is null && enchantment?.CanEnchant(card) != false);
+            if (enchantableCardCount < enchantableCards) {
+                if (enchantment is null) {
+                    sb.Append($"\nEnchantable Cards: actual {enchantableCardCount}, expected >={enchantableCards}");
+                } else {
+                    sb.Append($"\nCards Enchantable with {enchantment.GetType()!.Name}: actual {enchantableCardCount}, expected >={enchantableCards}");
+                }
             }
         }
-
-        if (!_hasGoldRequirement) return true;
-        if (!_basedOnGoldVar) return player.Gold >= Gold;
-        
-        if (!eventModel.DynamicVars.ContainsKey("Gold")) throw new Exception($"Event {eventModel.GetType()} does not have a Gold dynamic variable");
-        
-        return player.Gold >= eventModel.DynamicVars.Gold.BaseValue;
+        if (hasGoldRequirement) {
+            switch (basedOnGoldVar) {
+                case true when player.Gold < eventModel.DynamicVars.Gold.IntValue:
+                    sb.Append($"\nGold Var: actual {player.Gold}, expected >={eventModel.DynamicVars.Gold.IntValue}");
+                    break;
+                case false when player.Gold < gold:
+                    sb.Append($"\nGold: actual {player.Gold}, expected >={gold}");
+                    break;
+            }
+        }
+        return sb.ToString();
     }
 }
