@@ -4,6 +4,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Helpers;
+using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
 
 namespace GlutonsAscensions.Patches.AscensionLevels;
@@ -35,6 +36,8 @@ public class TornRugPatches {
     [HarmonyPostfix]
     static void ReplaceRugTexture(NMerchantInventory __instance) {
         if (!GlutonsAscensionLevel.TornRug.HasAscension()) return;
+
+        if (__instance.GetType() != typeof(NMerchantInventory)) return; // Skips NFakeMerchantInventory
         
         if (__instance._slotsContainer is TextureRect textureRect) {
             textureRect.SetTexture(ResourceLoader.Load<Texture2D>(TornRugPath));
@@ -45,14 +48,8 @@ public class TornRugPatches {
     [HarmonyPrefix]
     static void RemoveColoredCardSlots(NMerchantInventory __instance, MerchantInventory inventory) {
         if (!GlutonsAscensionLevel.TornRug.HasAscension()) return;
-
-        if (inventory.CharacterCardEntries.Count != 3) {
-            var ascensionLevel = GlutonsAscensionLevel.TornRug.Level();
-            var ascensionName = GlutonsAscensionLevel.TornRug.FormattedName();
-            Logger.Error($"Merchant inventory has the incorrect number of colored card for Ascension {ascensionLevel} ({ascensionName}): {inventory.CharacterCardEntries.Count}, expected 3");
-            return;
-        }
-
+        
+        if (__instance.GetType() != typeof(NMerchantInventory)) return; // Skips NFakeMerchantInventory
         if (__instance._characterCardContainer is null) return;
 
         while (__instance._characterCardContainer.GetChildCount() > inventory.CharacterCardEntries.Count) {
