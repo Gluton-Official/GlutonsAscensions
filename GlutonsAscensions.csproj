@@ -241,4 +241,24 @@
 
         <Exec Command="gh release create v$(Version) --notes-file &quot;$(ChangelogFileMarkdown)&quot; --title &quot;v$(Version)&quot; --fail-on-no-commits &quot;$(BuildOutputBundleDir).zip&quot; &quot;$(BuildOutputBundleDir)/*&quot;"/>
     </Target>
+
+    <!-- Publish Release -->
+    
+    <!-- Run Target -->
+    <Target Name="PublishPatchRelease">
+        <MSBuild Projects="$(MSBuildProjectFile)" Targets="BumpVersionPatch"/>
+        <MSBuild Projects="$(MSBuildProjectFile)" Targets="UploadToSteamWorkshop"/>
+    </Target>
+
+    <!-- Run Target -->
+    <Target Name="PublishMinorRelease">
+        <MSBuild Projects="$(MSBuildProjectFile)" Targets="BumpVersionMinor"/>
+        <MSBuild Projects="$(MSBuildProjectFile)" Targets="UploadToSteamWorkshop"/>
+    </Target>
+
+    <!-- Run Target -->
+    <Target Name="PublishMajorRelease">
+        <MSBuild Projects="$(MSBuildProjectFile)" Targets="BumpVersionMajor"/>
+        <MSBuild Projects="$(MSBuildProjectFile)" Targets="UploadToSteamWorkshop"/>
+    </Target>
 </Project>
