@@ -55,34 +55,19 @@ public static class CommandPatches {
             return HarmonyExtensions.PrefixRunOriginal;
         }
 
-        switch (args.Length) {
-            case 2: {
-                var ascensionLevel = args[1];
-                __result = new CompletionResult {
-                    Candidates = Enumerable.Range(1, GlutonsAscensionLevel.MaxAscensionAllowed)
-                        .Select(i => i.ToString())
-                        .Where(s => s.StartsWith(ascensionLevel))
-                        .ToList(),
-                    Type = CompletionType.Argument,
-                    ArgumentContext = __instance.CmdName,
-                };
-                return HarmonyExtensions.PrefixSkipOriginal;
-            }
-            case 3: {
-                var target = args[2];
-                __result = new CompletionResult {
-                    Candidates = ModelDb.AllCharacters
-                        .Select(c => c.Id.Entry)
-                        .AddItem("MULTIPLAYER")
-                        .Where(s => s.StartsWith(target))
-                        .ToList(),
-                    Type = CompletionType.Argument,
-                    ArgumentContext = __instance.CmdName,
-                };
-                return HarmonyExtensions.PrefixSkipOriginal;
-            }
-            default:
-                return HarmonyExtensions.PrefixRunOriginal;
-        }
+        var candidates = args.Length switch {
+            2 => Enumerable.Range(1, GlutonsAscensionLevel.MaxAscensionAllowed).Select(i => i.ToString()),
+            3 => ModelDb.AllCharacters.Select(c => c.Id.Entry).AddItem("MULTIPLAYER"),
+            _ => null
+        };
+        if (candidates is null) return HarmonyExtensions.PrefixRunOriginal;
+        
+        __result = __instance.CompleteArgument(
+            candidates,
+            args[..^1],
+            args[^1]
+        );
+        
+        return HarmonyExtensions.PrefixSkipOriginal;
     }
 }
