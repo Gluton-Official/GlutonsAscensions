@@ -153,8 +153,7 @@ internal partial class NAscensionLock : TextureRect {
         
         if (__instance._arrowsVisible &&
             __instance.Ascension == GlutonsAscensionLevel.BaseMaxAscensionAllowed &&
-            __instance._maxAscension == GlutonsAscensionLevel.BaseMaxAscensionAllowed &&
-            (__instance._mode == MultiplayerUiMode.Host) == (SaveManager.Instance.Progress.MaxMultiplayerAscension == GlutonsAscensionLevel.BaseMaxAscensionAllowed)
+            __instance._maxAscension == GlutonsAscensionLevel.BaseMaxAscensionAllowed
         ) {
             EnableLock(rightArrow);
         } else {
