@@ -81,37 +81,42 @@
         <Content Include="Sts2PathDiscovery.props"/>
     </ItemGroup>
     
-    <Target Name="CleanOut" BeforeTargets="Collect">
-        <Message Text="Cleaning 'out' dir" Importance="high"/>
-        <RemoveDir Directories="$(MSBuildProjectDirectory)/out"/>
-    </Target>
+    <!-- Custom Build Targets -->
     
-    <Target Name="Collect" AfterTargets="PackPck">
+    <Target Name="GetVersion">
         <PropertyGroup>
             <ManifestContent>$([System.IO.File]::ReadAllText('$(AssemblyName).json'))</ManifestContent>
             <Version>$([System.Text.RegularExpressions.Regex]::Match('$(ManifestContent)', '"version":\s*"v([^"]+)').Groups[1].Value)</Version>
         </PropertyGroup>
-        
+
         <CreateProperty Value="$(Version)">
             <Output TaskParameter="Value" PropertyName="Version" />
         </CreateProperty>
+        
+        <CreateProperty Value="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)">
+            <Output TaskParameter="Value" PropertyName="BuildOutputBundleDir" />
+        </CreateProperty>
+    </Target>
 
+    <!-- Collect Mod Files -->
+    
+    <Target Name="CleanOut">
+        <Message Text="Cleaning 'out' dir" Importance="high"/>
+        <RemoveDir Directories="$(MSBuildProjectDirectory)/out"/>
+    </Target>
+
+    <Target Name="Collect" AfterTargets="PackPck" DependsOnTargets="CleanOut;GetVersion"
+            Condition="Exists('$(TargetPath)') And Exists('$(ModManifest)') And Exists('$(PckPackerOutputPath)') And '$(PckPackerSkipped)' != 'true'">
         <Message Text="Collecting .dll, .json, and .pck for v$(Version)" Importance="high"/>
 
-        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)"/>
-        <Copy SourceFiles="$(ModManifest)" DestinationFolder="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)"/>
-        <Copy SourceFiles="$(PckPackerOutputPath)"
-              DestinationFolder="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)"
-              Condition="Exists('$(PckPackerOutputPath)') And '$(PckPackerSkipped)' != 'true'"/>
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BuildOutputBundleDir)"/>
+        <Copy SourceFiles="$(ModManifest)" DestinationFolder="$(BuildOutputBundleDir)"/>
+        <Copy SourceFiles="$(PckPackerOutputPath)" DestinationFolder="$(BuildOutputBundleDir)"/>
     </Target>
 
-    <Target Name="Zip" AfterTargets="Collect">
-        <ZipDirectory SourceDirectory="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)"
-                      DestinationFile="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version).zip"
-                      Overwrite="true"/>
-    </Target>
+    <!-- Move Mod Files to Mods Folder -->
     
-    <Target Name="RemoveOldMod" BeforeTargets="CopyToMods">
+    <Target Name="RemoveOldModVersion">
         <ItemGroup>
             <OldModDir Include="$([System.IO.Directory]::GetDirectories('$(ModsPath)', '$(MSBuildProjectName)*'))"/>
         </ItemGroup>
@@ -120,26 +125,17 @@
         <RemoveDir Directories="@(OldModDir)"/>
     </Target>
     
-    <Target Name="CopyToMods" AfterTargets="Collect">
+    <Target Name="CopyToMods" AfterTargets="Collect" DependsOnTargets="RemoveOldModVersion;GetVersion">
         <ItemGroup>
-            <ModFiles Include="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)/**"/>
+            <ModFiles Include="$(BuildOutputBundleDir)/**"/>
         </ItemGroup>
         
         <Copy SourceFiles="@(ModFiles)" DestinationFolder="$(ModsPath)$(MSBuildProjectName).$(Version)/%(RecursiveDir)"/>
     </Target>
-    
-    <Target Name="UpdateChangelog" AfterTargets="Collect">
-        <PropertyGroup>
-            <ChangelogFile>$(MSBuildProjectDirectory)/out/CHANGELOG.md</ChangelogFile>
-        </PropertyGroup>
-        
-        <Exec Command="git-cliff.exe --latest --config &quot;.config/cliff.md.toml&quot; --output &quot;$(ChangelogFile)&quot;"
-              ContinueOnError="false"/>
-        
-        <Message Text="Generated changelog at: $(ChangelogFile)" Importance="high"/>
-    </Target>
 
-    <Target Name="RemoveOldSteamWorkshopModFolder" BeforeTargets="CopyToSteamWorkshopUploader">
+    <!-- Create Steam Release -->
+
+    <Target Name="RemoveOldSteamWorkshopModFolder">
         <ItemGroup>
             <ContentFiles Include="$(SteamWorkshopModPath)/content/*.*"/>
             <ContentDirs Include="$([System.IO.Directory]::GetDirectories('$(SteamWorkshopModPath)/content/', '*'))"/>
@@ -150,32 +146,99 @@
         <RemoveDir Directories="@(ContentDirs)"/>
     </Target>
     
-    <Target Name="CopyToSteamWorkshopUploader" AfterTargets="Collect">
+    <Target Name="CopyToSteamWorkshopUploader" DependsOnTargets="RemoveOldSteamWorkshopModFolder;GetVersion">
+        <Error Text="Cannot copy to Steam Workshop Uploader: Bundle directory '$(BuildOutputBundleDir)' does not exist, make sure to build first"
+               Condition="!Exists('$(BuildOutputBundleDir)')"/>
+        
         <ItemGroup>
-            <ModFiles Include="$(MSBuildProjectDirectory)/out/$(MSBuildProjectName).$(Version)/**"/>
+            <ModFiles Include="$(BuildOutputBundleDir)/**"/>
         </ItemGroup>
         
         <Copy SourceFiles="@(ModFiles)" DestinationFolder="$(SteamWorkshopModPath)/content/$(MSBuildProjectName).$(Version)/%(RecursiveDir)"/>
     </Target>
     
-    <Target Name="UpdateSteamWorkshopChangelog" BeforeTargets="UploadToSteamWorkshop">
+    <Target Name="UpdateSteamWorkshopChangelog" DependsOnTargets="CopyToSteamWorkshopUploader" Condition="Exists('$(SteamWorkshopModPath)')">
         <PropertyGroup>
             <ChangelogFile>$(MSBuildProjectDirectory)/out/CHANGELOG.bbcode</ChangelogFile>
         </PropertyGroup>
         
-        <Exec Command="git-cliff.exe --latest --config &quot;.config/cliff.bbcode.toml&quot; --output &quot;$(ChangelogFile)&quot;"
-              ContinueOnError="false"/>
+        <Exec Command="git-cliff.exe --latest --config &quot;.config/cliff.bbcode.toml&quot; --output &quot;$(ChangelogFile)&quot;"/>
         
         <Message Text="Generated changelog at: $(ChangelogFile)" Importance="high"/>
         
         <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)/UpdateSteamWorkshopJson.ps1&quot; -WorkshopPath &quot;$(SteamWorkshopModPath)/workshop.json&quot; -ChangelogPath &quot;$(ChangelogFile)&quot;"
-              ContinueOnError="false"
               Condition="Exists('$(ChangelogFile)')"/>
     </Target>
         
-    <Target Name="UploadToSteamWorkshop">
-        <Exec Command="$(SteamWorkshopUploaderPath)ModUploader.exe upload -w &quot;$(SteamWorkshopUploaderPath)$(MSBuildProjectName)&quot;"
-              ContinueOnError="false"
-              Condition="Exists('$(SteamWorkshopModPath)')"/>
+    <!-- Run Target -->
+    <Target Name="UploadToSteamWorkshop" DependsOnTargets="UpdateSteamWorkshopChangelog" Condition="Exists('$(SteamWorkshopModPath)')">
+        <Exec Command="$(SteamWorkshopUploaderPath)ModUploader.exe upload -w &quot;$(SteamWorkshopUploaderPath)$(MSBuildProjectName)&quot;"/>
+    </Target>
+    
+    <!-- Create Github Release -->
+
+    <!-- Run Target -->
+    <Target Name="BumpVersionPatch">
+        <MSBuild Projects="$(MSBuildProjectFile)"
+                 Targets="BumpVersion"
+                 Properties="VersionPart=PATCH"/>
+    </Target>
+
+    <!-- Run Target -->
+    <Target Name="BumpVersionMinor">
+        <MSBuild Projects="$(MSBuildProjectFile)"
+                 Targets="BumpVersion"
+                 Properties="VersionPart=MINOR"/>
+    </Target>
+
+    <!-- Run Target -->
+    <Target Name="BumpVersionMajor">
+        <MSBuild Projects="$(MSBuildProjectFile)"
+                 Targets="BumpVersion"
+                 Properties="VersionPart=MAJOR"/>
+    </Target>
+
+    <Target Name="BumpVersion" Condition="Exists('$(ModManifest)')">
+        <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)/BumpVersion.ps1&quot; $(VersionPart) &quot;$(ModManifest)&quot;"
+              ContinueOnError="false"/>
+    </Target>
+    
+    <Target Name="GitPushVersionBump" AfterTargets="BumpVersion" DependsOnTargets="GetVersion" Condition="Exists('$(ModManifest)')">
+        <Exec Command="git commit -m &quot;Bump version to v$(Version)&quot; &quot;$(ModManifest)&quot;"/>
+        <Exec Command="git tag -f v$(Version)"/>
+        <Exec Command="git push origin v$(Version)"/>
+        <Exec Command="git push origin master"/>
+    </Target>
+
+    <Target Name="ZipArchive" DependsOnTargets="GetVersion;Collect">
+        <Error Text="Cannot create Zip archive: Bundle directory '$(BuildOutputBundleDir)' does not exist, make sure to build first"
+               Condition="!Exists('$(BuildOutputBundleDir)')"/>
+        
+        <ZipDirectory SourceDirectory="$(BuildOutputBundleDir)"
+                      DestinationFile="$(BuildOutputBundleDir).zip"
+                      Overwrite="true"/>
+    </Target>
+
+    <Target Name="GenerateLatestChangelog">
+        <PropertyGroup>
+            <ChangelogFile>$(MSBuildProjectDirectory)/out/CHANGELOG.md</ChangelogFile>
+        </PropertyGroup>
+
+        <Exec Command="git-cliff.exe --latest --config &quot;.config/cliff.md.toml&quot; --output &quot;$(ChangelogFile)&quot;"/>
+
+        <Message Text="Generated changelog at: $(ChangelogFile)" Importance="high"/>
+
+        <CreateProperty Value="$(ChangelogFile)">
+            <Output TaskParameter="Value" PropertyName="ChangelogFileMarkdown" />
+        </CreateProperty>
+    </Target>
+    
+    <Target Name="GithubRelease" AfterTargets="GitPushVersionBump" DependsOnTargets="GetVersion;ZipArchive;GenerateLatestChangelog">
+        <Error Text="Cannot create GitHub release: Changelog file '$(ChangelogFileMarkdown)' does not exist"
+               Condition="!Exists('$(ChangelogFileMarkdown)')"/>
+        <Error Text="Cannot create GitHub release: Zip archive '$(BuildOutputBundleDir).zip' does not exist"
+               Condition="!Exists('$(BuildOutputBundleDir).zip')"/>
+
+        <Exec Command="gh release create v$(Version) --notes-file &quot;$(ChangelogFileMarkdown)&quot; --title &quot;v$(Version)&quot; --fail-on-no-commits &quot;$(BuildOutputBundleDir).zip&quot; &quot;$(BuildOutputBundleDir)/*&quot;"/>
     </Target>
 </Project>

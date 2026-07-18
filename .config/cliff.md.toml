@@ -1,7 +1,6 @@
 [changelog]
 body = """
-## {{ version }}
-{% for group, commits in commits | filter(attribute="merge_commit", value=false) | group_by(attribute="group") %}
+{% for group, commits in commits | filter(attribute="merge_commit", value=false) | group_by(attribute="group") -%}
     ### {{ group | upper_first }}
     {% for commit in commits | unique(attribute="message") %}
         - {{ commit.message | upper_first | trim }}\
