@@ -65,15 +65,15 @@ public class LockedInPatches {
             
         var transcendenceStarterCardLocalIndex = codeMatcher.Instruction.LocalIndex();
         
-        // transcendenceStarterCard = LockedInPatches.RemoveEternalBeforeTransform(transcendenceStarterCard);
+        // transcendenceStarterCard = LockedInPatches.RemoveEternal(transcendenceStarterCard);
         // 
         // ldloc.2      // transcendenceStarterCard
-        // call         RemoveEternalBeforeTransform
+        // call         RemoveEternal
         // stloc.2      // transcendenceStarterCard
         codeMatcher
             .InsertAfter(
                 CodeInstruction.LoadLocal(transcendenceStarterCardLocalIndex),
-                CodeInstruction.Call(() => RemoveEternalBeforeTransform(null!)),
+                CodeInstruction.Call(() => RemoveEternal(null!)),
                 CodeInstruction.StoreLocal(transcendenceStarterCardLocalIndex)
             );
         
@@ -94,20 +94,135 @@ public class LockedInPatches {
             .InsertAfterAndAdvance(
                 CodeInstruction.LoadLocal(cardPileAddResultLocalIndex),
                 CodeInstruction.LoadLocal(transcendenceStarterCardLocalIndex),
-                CodeInstruction.Call(() => RemoveStarterCardFromEternalListIfSuccessful(null!, null!))
+                CodeInstruction.Call(() => RemoveEternalCardIfCardPileAddResultSuccess(null!, null!))
             );
 
         return codeMatcher.Instructions();
     }
+
+    [HarmonyPatch]
+    public static class DowsingRodBetaCompatPatch {
+        private static MethodBase? _dowsingBeforeRoomEnteredMethod;
+        private static Type? _abundanceType;
+
+        [HarmonyPrepare]
+        static bool HasSupportedBetaInfo() {
+            if (!BetaCompatHelpers.TryGetBetaMethod(
+                "MegaCrit.Sts2.Core.Models.Cards.Dowsing",
+                "BeforeRoomEntered",
+                out _dowsingBeforeRoomEnteredMethod
+            )) return false;
+
+            if (!BetaCompatHelpers.TryGetBetaType(
+                "MegaCrit.Sts2.Core.Models.Cards.Abundance",
+                out _abundanceType
+            )) return false;
+            
+            return true;
+        }
+
+        [HarmonyTargetMethod]
+        static MethodBase GetDowsingBeforeRoomEntered() => AccessTools.AsyncMoveNext( _dowsingBeforeRoomEnteredMethod!)
+            ?? throw new Exception($"[GlutonsAscensions] {typeof(DowsingRodBetaCompatPatch)} target method has no async MoveNext");
+
+        [HarmonyTranspiler]
+        static IEnumerable<CodeInstruction> RemoveEternalBeforeTransform(IEnumerable<CodeInstruction> instructions) {
+            var transformToAbundanceMethod = AccessTools.Method(typeof(CardCmd), nameof(CardCmd.TransformTo)).MakeGenericMethod(_abundanceType!);
+            
+            var codeMatcher = new CodeMatcher(instructions);
+
+            // CardPileAddResult? nullable = await CardCmd.TransformTo<Abundance>((CardModel) dowsing);
+            // 
+            // ldloc.1      // dowsing
+            // ldc.i4.1
+            // call         class [System.Runtime]System.Threading.Tasks.Task`1<valuetype [System.Runtime]System.Nullable`1<valuetype MegaCrit.Sts2.Core.Entities.Cards.CardPileAddResult>> MegaCrit.Sts2.Core.Commands.CardCmd::TransformTo<class MegaCrit.Sts2.Core.Models.Cards.Abundance>(class MegaCrit.Sts2.Core.Models.CardModel, valuetype MegaCrit.Sts2.Core.Nodes.CommonUi.CardPreviewStyle)
+            codeMatcher
+                .MatchStartForward(
+                    CodeMatch.LoadsLocal(),
+                    CodeMatch.LoadsConstant(),
+                    CodeMatch.Calls(transformToAbundanceMethod)
+                )
+                .ThrowIfInvalid("Could not find an ldloc opcode followed by an ldc opcode followed by call to CardCmd.TransformTo");
+            
+            var dowsingCardLocalIndex = codeMatcher.Instruction.LocalIndex();
+
+            // dowsing = LockedInPatches.RemoveEternal(dowsing);
+            // 
+            // ldloc.1      // dowsing
+            // call         RemoveEternal
+            // stloc.1      // dowsing
+            codeMatcher
+                .Insert(
+                    CodeInstruction.LoadLocal(dowsingCardLocalIndex),
+                    CodeInstruction.Call(() => RemoveEternal(null!)),
+                    CodeInstruction.StoreLocal(dowsingCardLocalIndex)
+                );
+            
+            // CardPileAddResult? nullable = await CardCmd.TransformTo<Abundance>((CardModel) dowsing);
+            // 
+            // call         class [System.Runtime]System.Threading.Tasks.Task`1<valuetype [System.Runtime]System.Nullable`1<valuetype MegaCrit.Sts2.Core.Entities.Cards.CardPileAddResult>> MegaCrit.Sts2.Core.Commands.CardCmd::TransformTo<class MegaCrit.Sts2.Core.Models.Cards.Abundance>(class MegaCrit.Sts2.Core.Models.CardModel, valuetype MegaCrit.Sts2.Core.Nodes.CommonUi.CardPreviewStyle)
+            // callvirt     instance valuetype [System.Runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!0/*valuetype [System.Runtime]System.Nullable`1<valuetype MegaCrit.Sts2.Core.Entities.Cards.CardPileAddResult>*/> class [System.Runtime]System.Threading.Tasks.Task`1<valuetype [System.Runtime]System.Nullable`1<valuetype MegaCrit.Sts2.Core.Entities.Cards.CardPileAddResult>>::GetAwaiter()
+            // stloc.3      // cardPileAddResult
+            codeMatcher
+                .MatchEndForward(
+                    CodeMatch.Calls(transformToAbundanceMethod),
+                    new CodeMatch(OpCodes.Callvirt),
+                    CodeMatch.StoresLocal()
+                )
+                .ThrowIfInvalid("Could not find call to CardCmd.TransformTo followed by a callvirt opcode followed by a stloc");
     
-    private static CardModel? RemoveEternalBeforeTransform(CardModel? card) {
+            var cardPileAddResultLocalIndex = codeMatcher.Instruction.LocalIndex();
+    
+            // LockedInPatches.RemoveEternalCardIfCardPileAddResultSuccess(cardPileAddResult, dowsing);
+            // 
+            // ldloc.3      // cardPileAddResult
+            // ldloc.1      // dowsing
+            // call         RemoveEternalCardIfCardPileAddResultSuccess
+            codeMatcher
+                .InsertAfterAndAdvance(
+                    CodeInstruction.LoadLocal(cardPileAddResultLocalIndex),
+                    CodeInstruction.LoadLocal(dowsingCardLocalIndex),
+                    CodeInstruction.Call(() => RemoveEternalCardIfCardPileAddResultSuccess(null!, null!))
+                );
+
+            return codeMatcher.Instructions();
+        }
+    }
+    
+    [HarmonyPatch]
+    public static class AbundanceBetaCompatPatch {
+        private static Type? _abundanceType;
+        private static bool? _hasAbundanceType;
+        
+        [HarmonyPatch(typeof(CardCmd), nameof(CardCmd.Transform), typeof(CardModel), typeof(CardModel), typeof(CardPreviewStyle))]
+        [HarmonyPrefix]
+        static void TransformPrefix(CardModel original, CardModel replacement) {
+            if (!GlutonsAscensionLevel.LockedIn.HasAscension()) return;
+            
+            if (_hasAbundanceType is false) return;
+            
+            if (_hasAbundanceType is null) {
+                _hasAbundanceType = BetaCompatHelpers.TryGetBetaType(
+                    "MegaCrit.Sts2.Core.Models.Cards.Abundance",
+                    out _abundanceType
+                );
+            }
+
+            if (_hasAbundanceType == true && replacement.GetType() == _abundanceType) {
+                replacement.AddKeyword(CardKeyword.Eternal);
+                IsEternal[replacement] = true;
+            }
+        }
+    }
+    
+    private static CardModel? RemoveEternal(CardModel? card) {
         if (GlutonsAscensionLevel.LockedIn.HasAscension() && card is not null) {
             card.RemoveKeyword(CardKeyword.Eternal);
         }
         return card;
     }
 
-    private static void RemoveStarterCardFromEternalListIfSuccessful(CardPileAddResult? result, CardModel card) {
+    private static void RemoveEternalCardIfCardPileAddResultSuccess(CardPileAddResult? result, CardModel card) {
         if (result is { success: true }) {
             IsEternal.Remove(card);
         }
@@ -169,40 +284,40 @@ public class LockedInPatches {
         }
         eventOptions = eventOptionsList;
     }
-}
+    
+    [HarmonyPatch]
+    public class EventPatches {
+        private static readonly Dictionary<Type, EventRequirements> _disallowedEvents = new() {
+            [typeof(LuminousChoir)] = new EventRequirements().RemovableCards(2),
+            [typeof(Symbiote)] = new EventRequirements().RemovableCard().EnchantableWith<Corrupted>().MeetAny(),
+        };
 
-[HarmonyPatch]
-public class EventPatches {
-    private static readonly Dictionary<Type, EventRequirements> _disallowedEvents = new() {
-        [typeof(LuminousChoir)] = new EventRequirements().RemovableCards(2),
-        [typeof(Symbiote)] = new EventRequirements().RemovableCard().EnchantableWith<Corrupted>().MeetAny(),
-    };
+        [HarmonyTargetMethods]
+        static IEnumerable<MethodBase> Events() =>
+            AccessTools.Method(typeof(EventModel), nameof(EventModel.IsAllowed)).FindOverrides();
 
-    [HarmonyTargetMethods]
-    static IEnumerable<MethodBase> Events() =>
-        AccessTools.Method(typeof(EventModel), nameof(EventModel.IsAllowed)).FindOverrides();
+        [HarmonyPostfix]
+        static void IsAllowedPostfix(EventModel __instance, IRunState runState, ref bool __result) {
+            if (!GlutonsAscensionLevel.LockedIn.HasAscension()) return;
+            
+            var eventModelType = __instance.GetType()!;
 
-    [HarmonyPostfix]
-    static void IsAllowedPostfix(EventModel __instance, IRunState runState, ref bool __result) {
-        if (!GlutonsAscensionLevel.LockedIn.HasAscension()) return;
-        
-        var eventModelType = __instance.GetType()!;
+            if (!__result) return; // Skip if already not allowed
+            if (!_disallowedEvents.TryGetValue(eventModelType, out var requirements)) return;
+            
+            __result = requirements.IsMetBy(runState.Players, __instance);
+            
+            GlutonsAscensionsMod.Logger.Info($"Checked {eventModelType.Name}, IsAllowed: {__result}");
 
-        if (!__result) return; // Skip if already not allowed
-        if (!_disallowedEvents.TryGetValue(eventModelType, out var requirements)) return;
-        
-        __result = requirements.IsMetBy(runState.Players, __instance);
-        
-        GlutonsAscensionsMod.Logger.Info($"Checked {eventModelType.Name}, IsAllowed: {__result}");
-
-        if (!__result) {
-            var sb = new StringBuilder($"Not allowing {eventModelType.Name}:");
-            foreach (var player in runState.Players.Where(player => !requirements.IsMetBy(player, __instance))) {
-                sb.Append($"\n  Player {player.Name} does not meet requirements:{requirements.FormatUnmetRequirements(player, __instance).Indent("    ")}");
+            if (!__result) {
+                var sb = new StringBuilder($"Not allowing {eventModelType.Name}:");
+                foreach (var player in runState.Players.Where(player => !requirements.IsMetBy(player, __instance))) {
+                    sb.Append($"\n  Player {player.Name} does not meet requirements:{requirements.FormatUnmetRequirements(player, __instance).Indent("    ")}");
+                }
+                GlutonsAscensionsMod.Logger.Info(sb.ToString());
             }
-            GlutonsAscensionsMod.Logger.Info(sb.ToString());
-        }
-    } 
+        } 
+    }
 }
 
 internal class EventRequirements {
