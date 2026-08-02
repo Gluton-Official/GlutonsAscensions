@@ -3,7 +3,7 @@
   "name": "Gluton's Ascensions",
   "author": "Gluton",
   "description": "Adds 10 new ascensions",
-  "version": "v1.4.5",
+  "version": "v1.4.6",
   "has_pck": true,
   "has_dll": true,
   "min_game_version": "0.107.1",
