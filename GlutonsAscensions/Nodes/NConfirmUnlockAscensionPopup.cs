@@ -50,11 +50,6 @@ public partial class NConfirmUnlockAscensionPopup : NVerticalPopup, IScreenConte
         );
         _verticalPopup.InitYesButton(ModLocString("main_menu_ui", "CONFIRM_UNLOCK_ASCENSION_POPUP.yes"), OnYesButtonPressed);
         _verticalPopup.InitNoButton(ModLocString("main_menu_ui", "CONFIRM_UNLOCK_ASCENSION_POPUP.no"), OnNoButtonPressed);
-        
-        Logger.Info($"Size: {Size}");
-        Logger.Info($"Position: {Position}");
-        Logger.Info($"_verticalPopup.Size: {_verticalPopup.Size}");
-        Logger.Info($"_verticalPopup.Position: {_verticalPopup.Position}");
     }
 
     private void OnNoButtonPressed(NButton _) {
