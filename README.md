@@ -43,7 +43,7 @@ STS2 mod that adds 10 new ascensions.
 
 ## Planned Features
 
-- Potentially make multiplayer runs at Ascension 10 and below not require disabling this mod if other players don't have the mod if other players don't have the mod if other players don't have the mod if other players don't have the mod
+- Potentially make multiplayer runs at Ascension 10 and below not require disabling this mod if other players don't have the mod
 
 ## Notes
 
