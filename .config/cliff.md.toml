@@ -28,6 +28,7 @@ commit_parsers = [
     { message = "^.*changelog", skip = true },
     { message = "^.*gitignore", skip = true },
     { message = "^.*docs", skip = true },
+    { message = "^.*project", skip = true },
     { message = "^.*README", skip = true },
     { message = "^.*Steam Workshop assets?", skip = true },
     { message = "^Add", group = "Added" },
