@@ -101,13 +101,13 @@
     <!-- Collect Mod Files -->
     
     <Target Name="CleanOut">
-        <Message Text="Cleaning 'out' dir" Importance="high"/>
+        <Message Text="[CleanOut] Cleaning 'out' dir" Importance="high"/>
         <RemoveDir Directories="$(MSBuildProjectDirectory)/out"/>
     </Target>
 
     <Target Name="Collect" AfterTargets="PackPck" DependsOnTargets="CleanOut;GetVersion"
             Condition="Exists('$(TargetPath)') And Exists('$(ModManifest)') And Exists('$(PckPackerOutputPath)') And '$(PckPackerSkipped)' != 'true'">
-        <Message Text="Collecting .dll, .json, and .pck for v$(Version)" Importance="high"/>
+        <Message Text="[Collect] Collecting .dll, .json, and .pck for v$(Version)" Importance="high"/>
 
         <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BuildOutputBundleDir)"/>
         <Copy SourceFiles="$(ModManifest)" DestinationFolder="$(BuildOutputBundleDir)"/>
@@ -121,7 +121,7 @@
             <OldModDir Include="$([System.IO.Directory]::GetDirectories('$(ModsPath)', '$(MSBuildProjectName)*'))"/>
         </ItemGroup>
         
-        <Message Text="Deleting old mod dir: @(OldModDir)" Importance="high"/>
+        <Message Text="[RemoveOldModVersion] Deleting old mod dir: @(OldModDir)" Importance="high"/>
         <RemoveDir Directories="@(OldModDir)"/>
     </Target>
     
@@ -129,7 +129,8 @@
         <ItemGroup>
             <ModFiles Include="$(BuildOutputBundleDir)/**"/>
         </ItemGroup>
-        
+
+        <Message Text="[CopyToMods] Copying mod files to: $(ModsPath)$(MSBuildProjectName).$(Version)" Importance="high"/>
         <Copy SourceFiles="@(ModFiles)" DestinationFolder="$(ModsPath)$(MSBuildProjectName).$(Version)/%(RecursiveDir)"/>
     </Target>
 
@@ -141,7 +142,7 @@
             <ContentDirs Include="$([System.IO.Directory]::GetDirectories('$(SteamWorkshopModPath)/content/', '*'))"/>
         </ItemGroup>
         
-        <Message Text="Deleting old uploader content: @(ContentFiles), @(ContentDirs)" Importance="high"/>
+        <Message Text="[RemoveOldSteamWorkshopModFolder] Deleting old uploader content: @(ContentFiles), @(ContentDirs)" Importance="high"/>
         <Delete Files="@(ContentFiles)"/>
         <RemoveDir Directories="@(ContentDirs)"/>
     </Target>
@@ -154,6 +155,7 @@
             <ModFiles Include="$(BuildOutputBundleDir)/**"/>
         </ItemGroup>
         
+        <Message Text="[CopyToSteamWorkshopUploader] Copying mod files to $(SteamWorkshopModPath)/content/$(MSBuildProjectName).$(Version)" Importance="high"/>
         <Copy SourceFiles="@(ModFiles)" DestinationFolder="$(SteamWorkshopModPath)/content/$(MSBuildProjectName).$(Version)/%(RecursiveDir)"/>
     </Target>
     
@@ -164,7 +166,7 @@
         
         <Exec Command="git-cliff.exe --latest --config &quot;.config/cliff.bbcode.toml&quot; --output &quot;$(ChangelogFile)&quot;"/>
         
-        <Message Text="Generated changelog at: $(ChangelogFile)" Importance="high"/>
+        <Message Text="[UpdateSteamWorkshopChangelog] Generated changelog at: $(ChangelogFile)" Importance="high"/>
         
         <Exec Command="pwsh -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)/UpdateSteamWorkshopJson.ps1&quot; -WorkshopPath &quot;$(SteamWorkshopModPath)/workshop.json&quot; -ChangelogPath &quot;$(ChangelogFile)&quot;"
               Condition="Exists('$(ChangelogFile)')"/>
@@ -214,6 +216,7 @@
         <Error Text="Cannot create Zip archive: Bundle directory '$(BuildOutputBundleDir)' does not exist, make sure to build first"
                Condition="!Exists('$(BuildOutputBundleDir)')"/>
         
+        <Message Text="[ZipArchive] Zipping $(BuildOutputBundleDir)" Importance="high"/>
         <ZipDirectory SourceDirectory="$(BuildOutputBundleDir)"
                       DestinationFile="$(BuildOutputBundleDir).zip"
                       Overwrite="true"/>
@@ -226,7 +229,7 @@
 
         <Exec Command="git-cliff.exe --latest --config &quot;.config/cliff.md.toml&quot; --output &quot;$(ChangelogFile)&quot;"/>
 
-        <Message Text="Generated changelog at: $(ChangelogFile)" Importance="high"/>
+        <Message Text="[GenerateLatestChangelog] Generated changelog at: $(ChangelogFile)" Importance="high"/>
 
         <CreateProperty Value="$(ChangelogFile)">
             <Output TaskParameter="Value" PropertyName="ChangelogFileMarkdown" />
