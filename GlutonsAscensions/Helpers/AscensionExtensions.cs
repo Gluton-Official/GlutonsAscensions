@@ -8,7 +8,7 @@ namespace GlutonsAscensions.Helpers;
 
 public static class AscensionExtensions {
     extension(AscensionLevel ascension) {
-        public int Level() => GlutonsAscensionLevel.AscensionToLevel(ascension) ?? (int) ascension;
+        public int Level() => (int) ascension;
         public string RawName() => GlutonsAscensionLevel.NameOf(ascension) ?? ascension.ToString();
         public string FormattedName() => AscensionHelper.GetTitle(ascension.Level()).GetFormattedText();
 
