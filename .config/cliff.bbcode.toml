@@ -20,7 +20,7 @@ postprocessors = [
 conventional_commits = false
 filter_unconventional = false
 commit_preprocessors = [
-    { pattern = '#([0-9]+)', replace = "[#${1}](<REPO>/issues/${1})"},
+    { pattern = '#([0-9]+)', replace = "[url=<REPO>/issues/${1}]#${1}[/url]"},
     # Check spelling of the commit message using https://github.com/crate-ci/typos.
     # If the spelling is incorrect, it will be fixed automatically.
     #{ pattern = '.*', replace_command = 'typos --write-changes -' },
