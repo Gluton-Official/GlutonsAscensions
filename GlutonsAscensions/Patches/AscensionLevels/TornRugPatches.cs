@@ -4,7 +4,6 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Helpers;
-using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
 
 namespace GlutonsAscensions.Patches.AscensionLevels;
@@ -14,36 +13,34 @@ using static HarmonyExtensions;
 
 [HarmonyPatch]
 public class TornRugPatches {
-    private static readonly string TornRugPath = ModResource("images/rooms/merchant_room/torn_shop_rug.png");
+    private static readonly string _tornRugPath = ModResource("images/rooms/merchant_room/torn_shop_rug.png");
     
-    // WARN: static constructor patches causes retriggering
-    [HarmonyPatch(typeof(MerchantInventory), MethodType.StaticConstructor)]
-    [HarmonyPostfix]
-    static void ReduceColoredCards(ref CardType[] ____coloredCardTypes) {
-        if (!GlutonsAscensionLevel.TornRug.HasAscension()) return;
-        
-        var coloredCardTypes = ____coloredCardTypes.ToList();
-        coloredCardTypes.Remove(CardType.Attack);
-        coloredCardTypes.Remove(CardType.Skill);
-        ____coloredCardTypes = coloredCardTypes.ToArray();
-    }
-
-    [HarmonyPatch(typeof(MerchantCardEntry), nameof(MerchantCardEntry.SetOnSale))]
+    private static readonly CardType[] _tornRugColoredCardTypes = [
+        CardType.Attack,
+        CardType.Skill,
+        CardType.Power,
+    ];
+    
+    [HarmonyPatch(typeof(MerchantInventory), nameof(MerchantInventory.PopulateCharacterCardEntries))]
     [HarmonyPrefix]
-    static bool PreventSetOnSale() => GlutonsAscensionLevel.TornRug.HasAscension() ? PrefixSkipOriginal : PrefixRunOriginal;
-
-    [HarmonyPatch(typeof(NMerchantInventory), nameof(NMerchantInventory._Ready))]
-    [HarmonyPostfix]
-    static void ReplaceRugTexture(NMerchantInventory __instance) {
-        if (!GlutonsAscensionLevel.TornRug.HasAscension()) return;
-
-        if (__instance.GetType() != typeof(NMerchantInventory)) return; // Skips NFakeMerchantInventory
+    static void ReduceColoredCards(ref CardType[] ____coloredCardTypes, out CardType[] __state) {
+        __state = ____coloredCardTypes;
         
-        if (__instance._slotsContainer is TextureRect textureRect) {
-            textureRect.SetTexture(ResourceLoader.Load<Texture2D>(TornRugPath));
-        }
+        if (!GlutonsAscensionLevel.TornRug.HasAscension()) return;
+        
+        ____coloredCardTypes = _tornRugColoredCardTypes;
     }
 
+    [HarmonyPatch(typeof(MerchantInventory), nameof(MerchantInventory.PopulateCharacterCardEntries))]
+    [HarmonyFinalizer]
+    static void RestoreColoredCards(
+        // ReSharper disable once RedundantAssignment
+        ref CardType[] ____coloredCardTypes,
+        CardType[] __state
+    ) {
+        ____coloredCardTypes = __state;
+    }
+    
     [HarmonyPatch(typeof(NMerchantInventory), nameof(NMerchantInventory.Initialize))]
     [HarmonyPrefix]
     static void RemoveColoredCardSlots(NMerchantInventory __instance, MerchantInventory inventory) {
@@ -56,6 +53,37 @@ public class TornRugPatches {
             var leftMostColoredCardSlot = __instance._characterCardContainer.GetChild<NMerchantCard>(0);
             __instance._characterCardContainer.RemoveChildSafely(leftMostColoredCardSlot);
             leftMostColoredCardSlot.QueueFreeSafely();
+        }
+    }
+
+    [HarmonyPatch(typeof(MerchantCardEntry), nameof(MerchantCardEntry.SetOnSale))]
+    [HarmonyPrefix]
+    static bool PreventSetOnSale() {
+        // ReSharper disable once SimplifyConditionalTernaryExpression
+        return GlutonsAscensionLevel.TornRug.HasAscension() ? PrefixSkipOriginal : PrefixRunOriginal;
+    }
+
+    [HarmonyPatch(typeof(MerchantCardEntry), nameof(MerchantCardEntry.CalcCost))]
+    [HarmonyPrefix]
+    static bool PreventSaleCostCalculation(MerchantCardEntry __instance) {
+        // ReSharper disable once DuplicatedSequentialIfBodies
+        if (!GlutonsAscensionLevel.TornRug.HasAscension()) return PrefixRunOriginal;
+        
+        if (!__instance.IsOnSale) return PrefixRunOriginal;
+        
+        __instance.IsOnSale = false;
+        return PrefixSkipOriginal;
+    }
+
+    [HarmonyPatch(typeof(NMerchantInventory), nameof(NMerchantInventory._Ready))]
+    [HarmonyPostfix]
+    static void ReplaceRugTexture(NMerchantInventory __instance) {
+        if (!GlutonsAscensionLevel.TornRug.HasAscension()) return;
+
+        if (__instance.GetType() != typeof(NMerchantInventory)) return; // Skips NFakeMerchantInventory
+        
+        if (__instance._slotsContainer is TextureRect textureRect) {
+            textureRect.SetTexture(ResourceLoader.Load<Texture2D>(_tornRugPath));
         }
     }
 
