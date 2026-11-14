@@ -7,6 +7,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Entities.Potions;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes;
@@ -16,8 +17,16 @@ namespace GlutonsAscensions.Patches.AscensionLevels;
 
 [HarmonyPatch]
 public class VolatileVialsPatches {
-    private const int COMBATS_BEFORE_INERT = 3;
-
+    private static readonly SavedSpireField<PotionModel, int> VolatileCombatCountdown = new(
+        potion => potion.Rarity switch {
+            PotionRarity.Uncommon => 4,
+            PotionRarity.Rare => 5,
+            PotionRarity.Event => 6,
+            _ => 3,
+        },
+        GlutonsAscensionsMod.ModNamespace(nameof(VolatileCombatCountdown))
+    );
+    
     private static readonly Shader GrayscaleShader = new() {
         // lang=gdshader
         Code = """
@@ -32,8 +41,6 @@ public class VolatileVialsPatches {
             }
         """
     };
-    
-    private static readonly SavedSpireField<PotionModel, int> VolatileCombatCountdown = new (() => COMBATS_BEFORE_INERT, GlutonsAscensionsMod.ModNamespace(nameof(VolatileCombatCountdown)));
     
     private static bool IsInert(PotionModel potion) => VolatileCombatCountdown[potion] <= 0;
 

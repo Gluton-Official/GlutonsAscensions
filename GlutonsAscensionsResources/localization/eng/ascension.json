@@ -5,7 +5,7 @@
   "LEVEL_OUTOFBUSINESS.title": "Out-of-Business",
   "LEVEL_BARREN.description": "Unknown rooms are less common.",
   "LEVEL_BARREN.title": "Barren",
-  "LEVEL_VOLATILEVIALS.description": "Potions become [gold]Inert[/gold] after [blue]3[/blue] combats.",
+  "LEVEL_VOLATILEVIALS.description": "Potions become [gold]Inert[/gold] after a few combats.",
   "LEVEL_VOLATILEVIALS.title": "Volatile Vials",
   "LEVEL_SHORTSUPPLY.description": "Ancients only offer [blue]2[/blue] relics.",
   "LEVEL_SHORTSUPPLY.title": "Short Supply",

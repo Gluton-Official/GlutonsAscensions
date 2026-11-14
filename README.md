@@ -13,11 +13,11 @@ STS2 mod that adds 10 new ascensions.
 | 11    | Torn Rug        | The Merchant offers 1 less attack and skill, and no on-sale cards. |                                                                                                                                          |
 | 12    | Out-of-Business | Each act only has 1 marked Merchant room.                          |                                                                                                                                          |
 | 13    | Barren          | Unknown rooms are less common.                                     | Mean and range changed from 12, 10–14 to 10, 8–12                                                                                        |
-| 14    | Volatile Vials  | Potions become Inert after 3 combats.                              | Inert potions have no effect when used.                                                                                                  |
+| 14    | Volatile Vials  | Potions become Inert after a few combats.                          | Inert potions have no effect when used. Number of combats depends on potion rarity: Event - 6, Rare - 5, Uncommon - 4, Other - 3         |
 | 15    | Short Supply    | Ancients only offer 2 relics.                                      |                                                                                                                                          |
 | 16    | Slim Pickings   | Rewards from Elites have 1 less card.                              |                                                                                                                                          |
 | 17    | Plundered       | Marked Treasure rooms are empty.                                   | Spoils chest still contains bonus gold, Silver Crucible will only affect non-marked Treasure rooms                                       |
-| 18    | Cold Comfort    | Ancients only heal up to 30% of your max HP between acts.          | Max heal is equivalent to base rest site healing.                                                                                        |
+| 18    | Cold Comfort    | Ancients only heal up to 30% of your max HP between acts.          | Max heal is equivalent to base rest site healing                                                                                         |
 | 19    | Unprepared      | Draw 1 less card at the start of each combat.                      |                                                                                                                                          |
 | 20    | Locked-In       | Your starting deck gains Eternal.                                  | Includes all cards gained during Neow/Floor 1, some events and their options are disabled if entire deck is eternal (may encounter bugs) |
 
@@ -30,7 +30,7 @@ STS2 mod that adds 10 new ascensions.
 
 ## Disclaimers
 
-- Balance has not been thoroughly tested
+- Balance has not been thoroughly tested for ascensions 17+.
 
 ## Requirements
 
@@ -40,11 +40,3 @@ STS2 mod that adds 10 new ascensions.
 
 1. Download the `GlutonsAscensions.<version>.zip` from [latest release](https://github.com/Gluton-Official/GlutonsAscensions/releases/latest)
 2. Place the unzipped contents in `Slay the Spire 2/mods/GlutonsAscensions/`
-
-## Planned Features
-
-- Potentially make multiplayer runs at Ascension 10 and below not require disabling this mod if other players don't have the mod
-
-## Notes
-
-- Ascension functionality is done pretty much exclusively through Harmony patches, but would be much better as an `AscensionModel` class that extends `AbstractModel`, in the same way as relics and run modifiers

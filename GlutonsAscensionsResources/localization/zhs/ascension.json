@@ -5,7 +5,7 @@
   "LEVEL_OUTOFBUSINESS.title": "停业",
   "LEVEL_BARREN.description": "未知房间出现的概率降低。",
   "LEVEL_BARREN.title": "荒芜",
-  "LEVEL_VOLATILEVIALS.description": "药水在[blue]3[/blue]场战斗后变为[gold]惰性[/gold]。",
+  "LEVEL_VOLATILEVIALS.description": "药水在几次战斗后会变得[gold]惰性[/gold]。",
   "LEVEL_VOLATILEVIALS.title": "挥发性小瓶",
   "LEVEL_SHORTSUPPLY.description": "古之民只提供[blue]2[/blue]个遗物。",
   "LEVEL_SHORTSUPPLY.title": "供应缺",
