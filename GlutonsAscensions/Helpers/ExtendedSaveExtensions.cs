@@ -214,10 +214,22 @@ public static class ExtendedSaveExtensions {
     }
     
     extension<TKey, TVal>(SpireField<TKey, TVal> spireField) where TKey : class {
-        public bool Remove(TKey obj) {
-            var table = AccessTools.Field(spireField.GetType(), "_table").GetValue(spireField) as ConditionalWeakTable<TKey, object?>
-                ?? throw new Exception($"[GlutonsAscensions] Unable to get inner _table of {spireField.GetType().FriendlyName}");
-            return table.Remove(obj);
-        }
+        public bool Remove(TKey obj) => RemoveFromSpireField<TKey, object?>(spireField, obj);
+    }
+    
+    extension<TKey, TVal>(NotNullSpireField<TKey, TVal> spireField)
+        where TKey : class
+        where TVal : class
+    {
+        public bool Remove(TKey obj) => RemoveFromSpireField<TKey, TVal>(spireField, obj);
+    }
+
+    private static bool RemoveFromSpireField<TKey, TVal>(object spireField, TKey obj)
+        where TKey : class
+        where TVal : class?
+    {
+        var table = AccessTools.Field(spireField.GetType(), "_table").GetValue(spireField) as ConditionalWeakTable<TKey, TVal>
+            ?? throw new Exception($"[GlutonsAscensions] Unable to get inner _table of {spireField.GetType().FriendlyName}");
+        return table.Remove(obj);
     }
 }

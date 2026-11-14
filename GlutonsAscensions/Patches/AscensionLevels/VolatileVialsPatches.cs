@@ -4,14 +4,18 @@ using BaseLib.Utils;
 using GlutonsAscensions.Helpers;
 using Godot;
 using HarmonyLib;
+using MegaCrit.Sts2.addons.mega_text;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Potions;
+using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Potions;
+using MegaCrit.Sts2.Core.Nodes.Rewards;
+using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
 
 namespace GlutonsAscensions.Patches.AscensionLevels;
 
@@ -27,6 +31,8 @@ public class VolatileVialsPatches {
         GlutonsAscensionsMod.ModNamespace(nameof(VolatileCombatCountdown))
     );
     
+    private static readonly NotNullSpireField<NPotion, MegaLabel> CombatCountLabel = new(AddCombatCountLabel);
+    
     private static readonly Shader GrayscaleShader = new() {
         // lang=gdshader
         Code = """
@@ -39,8 +45,129 @@ public class VolatileVialsPatches {
                 
                 COLOR = vec4(vec3(gray), tex_color.a);
             }
-        """
+            """
     };
+
+    private static readonly Shader RustShader = new() {
+        // lang=gdshader
+        Code = """
+            shader_type canvas_item;
+
+            uniform vec4 rust_color_dark : source_color = vec4(0.35, 0.12, 0.03, 1.0);
+            uniform vec4 rust_color_mid  : source_color = vec4(0.75, 0.28, 0.06, 1.0);
+
+            uniform float rust_width : hint_range(0.0, 0.2) = 0.125;
+            uniform float rust_strength : hint_range(0.0, 2.0) = 1.4;
+            uniform float noise_scale = 45.0;
+            uniform float edge_threshold : hint_range(0.0, 1.0) = 0.99;
+
+            float hash(vec2 p) {
+                return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+            }
+
+            float noise(vec2 p) {
+                vec2 i = floor(p);
+                vec2 f = fract(p);
+
+                float a = hash(i);
+                float b = hash(i + vec2(1.0, 0.0));
+                float c = hash(i + vec2(0.0, 1.0));
+                float d = hash(i + vec2(1.0, 1.0));
+
+                vec2 u = f * f * (3.0 - 2.0 * f);
+
+                return mix(a, b, u.x) +
+                    (c - a) * u.y * (1.0 - u.x) +
+                    (d - b) * u.x * u.y;
+            }
+
+            float fbm(vec2 p) {
+                float value = 0.0;
+                float amplitude = 0.5;
+
+                for (int i = 0; i < 5; i++) {
+                    value += amplitude * noise(p);
+                    p *= 2.0;
+                    amplitude *= 0.5;
+                }
+
+                return value;
+            }
+
+            void fragment() {
+                vec4 tex = texture(TEXTURE, UV);
+
+                vec2 px = TEXTURE_PIXEL_SIZE * rust_width * 100.0;
+
+                float alpha_center = tex.a;
+
+                float alpha_left  = texture(TEXTURE, UV + vec2(-px.x, 0.0)).a;
+                float alpha_right = texture(TEXTURE, UV + vec2(px.x, 0.0)).a;
+                float alpha_up    = texture(TEXTURE, UV + vec2(0.0, -px.y)).a;
+                float alpha_down  = texture(TEXTURE, UV + vec2(0.0, px.y)).a;
+
+                float edge = 0.0;
+                edge += abs(alpha_center - alpha_left);
+                edge += abs(alpha_center - alpha_right);
+                edge += abs(alpha_center - alpha_up);
+                edge += abs(alpha_center - alpha_down);
+
+                edge = smoothstep(edge_threshold, 1.0, edge);
+
+                float inward_mask = smoothstep(0.0, rust_width, alpha_center);
+                float rust_mask = edge * inward_mask;
+
+                float n1 = fbm(UV * noise_scale);
+
+                rust_mask *= smoothstep(0.25, 0.95, n1);
+                rust_mask *= rust_strength;
+
+                vec4 rust_color = mix(rust_color_dark, rust_color_mid, n1);
+
+                vec3 final_color = mix(tex.rgb, rust_color.rgb, rust_mask);
+
+                COLOR = vec4(final_color, tex.a);
+            }
+            """
+    };
+
+    /// <param name="potion">Must have been added to the scene tree, since <see cref="NPotion.Image"/> is set in <see cref="NPotion._Ready"/></param>
+    private static void SetShader(NPotion potion, Shader shader) {
+        if (potion.Image.Material is ShaderMaterial { Shader: var currentShader} && currentShader == shader) return;
+        
+        var shaderMaterial = new ShaderMaterial();
+        shaderMaterial.Shader = shader;
+        potion.Image.Material = shaderMaterial;
+    }
+    
+    private static MegaLabel AddCombatCountLabel(NPotion potion) {
+        potion.Model.AssertMutable();
+        var label = CreateCombatCountLabel();
+        potion.AddChild(label);
+        label.SetTextAutoSize(VolatileCombatCountdown[potion.Model].ToString());
+        return label;
+    }
+
+    private static MegaLabel CreateCombatCountLabel() {
+        var label = new MegaLabel {
+            AutoSizeEnabled = false,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            LayoutMode = 1, // Anchors
+        };
+        label.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+        label.AddThemeColorOverride(ThemeConstants.Label.FontColor, StsColors.cream);
+        label.AddThemeColorOverride(ThemeConstants.Label.FontShadowColor, Colors.Black with { A = 0.1875f });
+        label.AddThemeColorOverride(ThemeConstants.Label.FontOutlineColor, new Color("26241C"));
+        label.AddThemeConstantOverride("shadow_offset_x", 2);
+        label.AddThemeConstantOverride("shadow_offset_y", 2);
+        label.AddThemeConstantOverride("outline_size", 10);
+        label.AddThemeConstantOverride("shadow_outline_size", 10);
+        label.AddThemeFontOverride(ThemeConstants.Label.Font, ResourceLoader.Load<FontVariation>("res://themes/kreon_bold_glyph_space_one.tres"));
+        label.AddThemeFontSizeOverride(ThemeConstants.Label.FontSize, 18);
+
+        return label;
+    }
     
     private static bool IsInert(PotionModel potion) => VolatileCombatCountdown[potion] <= 0;
 
@@ -67,13 +194,7 @@ public class VolatileVialsPatches {
         IsDebuff = true,
     };
 
-    private static void SetGrayscaleShader(NPotion potion) {
-        var shaderMaterial = new ShaderMaterial();
-        shaderMaterial.Shader = GrayscaleShader;
-        potion.Image.Material = shaderMaterial;
-    }
-
-    private static void UpdateLocalPotionHolders() {
+    private static void UpdateLocalPotionHoldersAfterCombat() {
         if (NRun.Instance is not { } run) return;
         
         var potions = run.GlobalUi.TopBar.PotionContainer._holders
@@ -81,16 +202,39 @@ public class VolatileVialsPatches {
             .Select(holder => holder.Potion!)
             .ToList();
 
-        // Stop any almost inert animations
         foreach (var potion in potions) {
-            AlmostInertTween[potion]?.Kill();
-        }
-        
-        // Make inert potions grayscale
-        foreach (var inertPotion in potions.Where(potion => VolatileCombatCountdown[potion.Model] <= 0)) {
-            SetGrayscaleShader(inertPotion);
+            StopAlmostInertAnimation(potion);
+
+            var combats = VolatileCombatCountdown[potion.Model];
+            
+            if (combats <= 0) {
+                // Make inert potions grayscale
+                SetShader(potion, GrayscaleShader);
+
+                CombatCountLabel[potion].Visible = false;
+            } else {
+                // Make volatile potions rusty
+                SetShader(potion, RustShader);
+
+                var label = CombatCountLabel[potion];
+                label.SetTextAutoSize(combats.ToString());
+                if (combats == 1) {
+                    label.AddThemeColorOverride(ThemeConstants.Label.FontColor, StsColors.red);
+                }
+            }
         }
     }
+
+    // [HarmonyPatch(typeof(NPotion), nameof(NPotion.Create))]
+    // [HarmonyPostfix]
+    // static void MakePotionVolatile(ref NPotion? __result) {
+    //     if (!GlutonsAscensionLevel.VolatileVials.HasAscension()) return;
+    //     
+    //     if (__result is not { } potion) return;
+    //
+    //     SetShader(potion, RustShader);
+    //     _ = CombatCountLabel[potion];
+    // }
 
     [HarmonyPatch(typeof(Player), nameof(Player.ResetCombatState))]
     [HarmonyPostfix]
@@ -121,7 +265,7 @@ public class VolatileVialsPatches {
             VolatileCombatCountdown[potion] = combats - 1;
         }
         
-        UpdateLocalPotionHolders();
+        UpdateLocalPotionHoldersAfterCombat();
     }
 
     [HarmonyPatch(typeof(NPotionContainer), nameof(NPotionContainer.Add))]
@@ -131,15 +275,25 @@ public class VolatileVialsPatches {
         if (!isInitialization) return;
 
         // Check if potion was successfully added
-        var potionHolder = __instance._holders.Find(holder => holder.Potion?.Model == potion);
-        if (potionHolder is null) return;
+        var potionNode = __instance._holders.Find(holder => holder.Potion?.Model == potion)?.Potion;
+        if (potionNode is null) return;
 
-        if (CombatManager.Instance.IsInProgress && VolatileCombatCountdown[potion] == 1) {
-            StartAlmostInertAnimation(potionHolder.Potion!);
+        var combats = VolatileCombatCountdown[potion];
+
+        if (CombatManager.Instance.IsInProgress && combats == 1) {
+            StartAlmostInertAnimation(potionNode);
         }
 
-        if (VolatileCombatCountdown[potion] <= 0) {
-            SetGrayscaleShader(potionHolder.Potion!);
+        var label = CombatCountLabel[potionNode];
+        if (IsInert(potion)) {
+            SetShader(potionNode, GrayscaleShader);
+            label.Visible = false;
+        } else {
+            SetShader(potionNode, RustShader);
+            label.SetTextAutoSize(combats.ToString());
+            if (combats == 1) {
+                label.AddThemeColorOverride(ThemeConstants.Label.FontColor, StsColors.red);
+            }
         }
     }
 
@@ -195,25 +349,36 @@ public class VolatileVialsPatches {
         
         VolatileCombatCountdown.Remove(__instance);
     }
-
+    
     [HarmonyPatch]
     class PotionHoverTipsPatch {
         [HarmonyTargetMethods]
-        static IEnumerable<MethodBase> ExtraHoverTips() =>
-            AccessTools.DeclaredPropertyGetter(typeof(PotionModel), nameof(PotionModel.ExtraHoverTips)).FindOverrides(searchAllTypes: true);
-
+        static IEnumerable<MethodBase> ExtraHoverTips() => AccessTools.DeclaredPropertyGetter(typeof(PotionModel), nameof(PotionModel.ExtraHoverTips)).FindOverrides(searchAllTypes: true);
+    
         [HarmonyPostfix]
-        static void AddVolatileToExtraHoverTipsPostfix(PotionModel __instance, ref IEnumerable<IHoverTip> __result) {
+        static void AddVolatileToExtraHoverTips(PotionModel __instance, ref IEnumerable<IHoverTip> __result) {
             if (!GlutonsAscensionLevel.VolatileVials.HasAscension()) return;
-        
+    
             __result = __result.Concat(CreateVolatilePotionHoverTip(__instance));
         }
     }
-    
+
+    // [HarmonyPatch(typeof(PotionModel), nameof(PotionModel.HoverTips), MethodType.Getter)]
+    // [HarmonyPostfix]
+    // static void AppendHoverTips(PotionModel __instance, ref IEnumerable<IHoverTip> __result) {
+    //     if (!GlutonsAscensionLevel.VolatileVials.HasAscension()) return;
+    //
+    //     __result = __result.Concat(CreateVolatilePotionHoverTip(__instance));
+    // }
+
     private static readonly SpireField<NPotion, Tween> AlmostInertTween = new(() => null);
 
-    private static void StartAlmostInertAnimation(NPotion potion) {
+    private static void StopAlmostInertAnimation(NPotion potion) {
         AlmostInertTween[potion]?.Kill();
+    }
+
+    private static void StartAlmostInertAnimation(NPotion potion) {
+        StopAlmostInertAnimation(potion);
         
         var tween = potion.GetTree().CreateTween().SetLoops();
         tween.TweenCallback(Callable.From(potion.DoBounce)).SetDelay(5.0);
@@ -225,11 +390,14 @@ public class VolatileVialsPatches {
     static void AddPotionPostfix(NPotionHolder __instance) {
         if (!GlutonsAscensionLevel.VolatileVials.HasAscension()) return;
         
-        if (!CombatManager.Instance.IsInProgress) return;
         if (__instance.Potion is not { } potion) return;
-        if (VolatileCombatCountdown[potion.Model] != 1) return;
+        
+        SetShader(potion, RustShader);
+        _ = CombatCountLabel[potion];
 
-        StartAlmostInertAnimation(potion);
+        if (CombatManager.Instance.IsInProgress && VolatileCombatCountdown[potion.Model] == 1) {
+            StartAlmostInertAnimation(potion);
+        }
     }
 
     [HarmonyPatch(typeof(NPotionHolder), "OnFocus")]
@@ -239,7 +407,7 @@ public class VolatileVialsPatches {
         
         if (__instance.Potion is not { } potion) return;
         
-        AlmostInertTween[potion]?.Kill();
+        StopAlmostInertAnimation(potion);
     }
     
     [HarmonyPatch(typeof(NPotionHolder), "OnUnfocus")]
@@ -261,7 +429,9 @@ public class VolatileVialsPatches {
         
         if (__instance.Potion is not { } potion) return;
         
-        AlmostInertTween[potion]?.Kill();
+        StopAlmostInertAnimation(potion);
+        
+        CombatCountLabel.Remove(potion);
     }
 
     [HarmonyPatch(typeof(NPotionHolder), nameof(NPotionHolder.RemoveUsedPotion))]
@@ -271,6 +441,30 @@ public class VolatileVialsPatches {
         
         if (__instance.Potion is not { } potion) return;
         
-        AlmostInertTween[potion]?.Kill();
+        StopAlmostInertAnimation(potion);
+        
+        CombatCountLabel.Remove(potion);
+    }
+    
+    [HarmonyPatch(typeof(NMerchantPotion), nameof(NMerchantPotion.FillSlot))]
+    [HarmonyPostfix]
+    static void MakeShopPotionVolatile(NMerchantPotion __instance) {
+        if (!GlutonsAscensionLevel.VolatileVials.HasAscension()) return;
+        
+        if (__instance._potionNode is not { } potion) return;
+
+        _ = CombatCountLabel[potion];
+        SetShader(potion, RustShader);
+    }
+
+    [HarmonyPatch(typeof(NRewardButton), nameof(NRewardButton.Reload))]
+    [HarmonyPostfix]
+    static void MakePotionRewardVolatile(NRewardButton __instance) {
+        if (!GlutonsAscensionLevel.VolatileVials.HasAscension()) return;
+
+        foreach (var potion in __instance._iconContainer.GetChildren().OfType<NPotion>()) {
+            _ = CombatCountLabel[potion];
+            SetShader(potion, RustShader);
+        }
     }
 }
