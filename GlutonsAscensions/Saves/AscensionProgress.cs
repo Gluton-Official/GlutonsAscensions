@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using GlutonsAscensions.Helpers;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Saves.Migrations;
@@ -13,6 +14,9 @@ public class AscensionProgress : ISaveSchema {
     [JsonPropertyName("multiplayer")]
     [JsonSerializeCondition(SerializationCondition.SaveIfNotTypeDefault)]
     public UnlockedAscensions Multiplayer { get; set; }
+    [JsonPropertyName("blitz")]
+    [JsonSerializeCondition(SerializationCondition.SaveIfNotTypeDefault)]
+    public UnlockedAscensions Blitz { get; set; }
     [JsonPropertyName("characters")]
     [JsonSerializeCondition(SerializationCondition.SaveIfNotCollectionEmptyOrNull)]
     public Dictionary<string, UnlockedAscensions> CharacterAscensions { get; set; } = [];
@@ -49,12 +53,25 @@ public class AscensionProgress : ISaveSchema {
     public static AscensionProgress FromProgressState(ProgressState progressState) {
         var characterAscensions = new Dictionary<string, UnlockedAscensions>();
         foreach (var characterStats in progressState.CharacterStats) {
-            if (UnlockedAscensions.CreateIfNeeded(characterStats.Value.MaxAscension, characterStats.Value.PreferredAscension) is { } unlockedAscensions) {
+            if (UnlockedAscensions.CreateIfNeeded(
+                GlutonsAscensionLevel.BaseMaxAscensionAllowed,
+                characterStats.Value.MaxAscension,
+                characterStats.Value.PreferredAscension
+            ) is { } unlockedAscensions) {
                 characterAscensions[GetSaveKeyOfModelId(characterStats.Key)] = unlockedAscensions;     
             }
         }
         return new AscensionProgress {
-            Multiplayer = UnlockedAscensions.CreateIfNeeded(progressState.MaxMultiplayerAscension, progressState.PreferredMultiplayerAscension) ?? default,
+            Multiplayer = UnlockedAscensions.CreateIfNeeded(
+                GlutonsAscensionLevel.BaseMaxAscensionAllowed,
+                progressState.MaxMultiplayerAscension,
+                progressState.PreferredMultiplayerAscension
+            ) ?? default,
+            Blitz = UnlockedAscensions.CreateIfNeeded(
+                GlutonsAscensionLevel.BaseMaxBlitzAscensionAllowed,
+                progressState.BetaCompatMaxBlitzAscension,
+                progressState.BetaCompatPreferredBlitzAscension
+            ) ?? default,
             CharacterAscensions = characterAscensions,
         };
     }
@@ -62,6 +79,10 @@ public class AscensionProgress : ISaveSchema {
     public void ApplyToProgressState(ProgressState progressState) {
         progressState.MaxMultiplayerAscension = Math.Max(progressState.MaxMultiplayerAscension, Multiplayer.Ascension);
         progressState.PreferredMultiplayerAscension = Math.Max(progressState.PreferredMultiplayerAscension, Multiplayer.PreferredAscension);
+        if (BetaCompatHelpers.IsAtLeastVersion(BetaCompatHelpers.VERSION_113)) {
+            progressState.BetaCompatMaxBlitzAscension = Math.Max(progressState.BetaCompatMaxBlitzAscension, Blitz.Ascension);
+            progressState.BetaCompatPreferredBlitzAscension = Math.Max(progressState.BetaCompatPreferredBlitzAscension, Blitz.PreferredAscension);
+        }
         foreach (var characterStats in progressState.CharacterStats) {
             if (CharacterAscensions.TryGetValue(GetSaveKeyOfModelId(characterStats.Key), out var characterAscensions)) {
                 characterStats.Value.MaxAscension = Math.Max(characterStats.Value.MaxAscension, characterAscensions.Ascension);
@@ -87,10 +108,10 @@ public class AscensionProgress : ISaveSchema {
         public static bool operator ==(UnlockedAscensions left, UnlockedAscensions right) => left.Equals(right);
         public static bool operator !=(UnlockedAscensions left, UnlockedAscensions right) => !(left == right);
         
-        public static UnlockedAscensions? CreateIfNeeded(int currentAscension, int currentPreferredAscension) {
+        public static UnlockedAscensions? CreateIfNeeded(int baseMaxAscensionAllowed, int currentAscension, int currentPreferredAscension) {
             var unlockedAscensions = new UnlockedAscensions {
-                Ascension = currentAscension > GlutonsAscensionLevel.BaseMaxAscensionAllowed ? currentAscension : 0,
-                PreferredAscension = currentPreferredAscension > GlutonsAscensionLevel.BaseMaxAscensionAllowed ? currentPreferredAscension : 0,
+                Ascension = currentAscension > baseMaxAscensionAllowed ? currentAscension : 0,
+                PreferredAscension = currentPreferredAscension > baseMaxAscensionAllowed ? currentPreferredAscension : 0,
             };
             return unlockedAscensions == default ? null : unlockedAscensions;
         }

@@ -113,13 +113,13 @@ internal partial class NAscensionLock : TextureRect {
     }
 
     private static HoverTip? CreateHoverTip(NAscensionPanel ascensionPanel) {
-        var target = ascensionPanel._mode switch {
+        var target = ascensionPanel.BetaCompatUiMode switch {
             MultiplayerUiMode.Host => null,
             MultiplayerUiMode.Singleplayer when ascensionPanel.SelectedCharacter() is { } selectedCharacter => selectedCharacter,
             _ => null
         };
         
-        if (ascensionPanel._mode is not MultiplayerUiMode.Host && target is null) return null;
+        if (ascensionPanel.BetaCompatUiMode is not MultiplayerUiMode.Host && target is null) return null;
         
         var description = ModLocString("main_menu_ui", "UNLOCK_ASCENSION_ARROW.description");
         description.Add("Level", GlutonsAscensionLevel.FirstGlutonAscensionLevel);
@@ -172,7 +172,7 @@ internal partial class NAscensionLock : TextureRect {
 
         var confirmationPopup = NConfirmUnlockAscensionPopup.Create(
             GlutonsAscensionLevel.FirstGlutonAscensionLevel,
-            GetTargetString(__instance._mode == MultiplayerUiMode.Host ? null : __instance.SelectedCharacter()),
+            GetTargetString(__instance.BetaCompatUiMode == MultiplayerUiMode.Host ? null : __instance.SelectedCharacter()),
             __instance
         );
         if (confirmationPopup is not null) {

@@ -1,3 +1,4 @@
+using System.Reflection;
 using GlutonsAscensions.Helpers;
 using Godot;
 using HarmonyLib;
@@ -5,6 +6,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
+using HarmonyExtensions = GlutonsAscensions.Helpers.HarmonyExtensions;
 
 namespace GlutonsAscensions.Patches.AscensionLevels;
 
@@ -20,25 +22,34 @@ public class TornRugPatches {
         CardType.Skill,
         CardType.Power,
     ];
-    
-    [HarmonyPatch(typeof(MerchantInventory), nameof(MerchantInventory.PopulateCharacterCardEntries))]
-    [HarmonyPrefix]
-    static void ReduceColoredCards(ref CardType[] ____coloredCardTypes, out CardType[] __state) {
-        __state = ____coloredCardTypes;
-        
-        if (!GlutonsAscensionLevel.TornRug.HasAscension()) return;
-        
-        ____coloredCardTypes = _tornRugColoredCardTypes;
-    }
 
-    [HarmonyPatch(typeof(MerchantInventory), nameof(MerchantInventory.PopulateCharacterCardEntries))]
-    [HarmonyFinalizer]
-    static void RestoreColoredCards(
-        // ReSharper disable once RedundantAssignment
-        ref CardType[] ____coloredCardTypes,
-        CardType[] __state
-    ) {
-        ____coloredCardTypes = __state;
+    [HarmonyPatch(typeof(MerchantInventory))]
+    public static class ReduceColoredCardsBetaCompatPatch {
+        [HarmonyTargetMethod]
+        static MethodBase CharacterCardEntries() =>
+            BetaCompatHelpers.GetVersionDependentMethodInfo<MerchantInventory>(
+                "GetDefaultCharacterCardEntries",
+                "PopulateCharacterCardEntries",
+                () => BetaCompatHelpers.IsAtLeastVersion(BetaCompatHelpers.VERSION_113)
+            );
+
+        [HarmonyPrefix]
+        static void ReduceColoredCards(ref CardType[] ____coloredCardTypes, out CardType[] __state) {
+            __state = ____coloredCardTypes;
+            
+            if (!GlutonsAscensionLevel.TornRug.HasAscension()) return;
+            
+            ____coloredCardTypes = _tornRugColoredCardTypes;
+        }
+        
+        [HarmonyFinalizer]
+        static void RestoreColoredCards(
+            // ReSharper disable once RedundantAssignment
+            ref CardType[] ____coloredCardTypes,
+            CardType[] __state
+        ) {
+            ____coloredCardTypes = __state;
+        }
     }
     
     [HarmonyPatch(typeof(NMerchantInventory), nameof(NMerchantInventory.Initialize))]

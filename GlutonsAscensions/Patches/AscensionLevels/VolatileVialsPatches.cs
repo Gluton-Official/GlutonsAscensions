@@ -170,6 +170,8 @@ public class VolatileVialsPatches {
     }
     
     private static bool IsInert(PotionModel potion) => VolatileCombatCountdown[potion] <= 0;
+    
+    private static readonly PropertyInfo _hoverTipIsDebuffProperty = AccessTools.DeclaredProperty(typeof(HoverTip), nameof(HoverTip.IsDebuff));
 
     private static IEnumerable<IHoverTip> CreateVolatilePotionHoverTip(PotionModel potion) {
         var combats = VolatileCombatCountdown[potion];
@@ -181,18 +183,25 @@ public class VolatileVialsPatches {
         var volatileHoverTip = new HoverTip(
             GlutonsAscensionsMod.ModLocString("static_hover_tips", "VOLATILE_POTION.title"),
             description
-        ) {
-            IsDebuff = true,
-        };
+        );
+        object boxedHoverTip = volatileHoverTip;
+        _hoverTipIsDebuffProperty.SetBackingField(boxedHoverTip, true);
+        volatileHoverTip = (HoverTip) boxedHoverTip;
         return [volatileHoverTip, InertPotionHoverTip];
     }
 
-    private static HoverTip InertPotionHoverTip => new(
-        GlutonsAscensionsMod.ModLocString("static_hover_tips", "INERT_POTION.title"),
-        GlutonsAscensionsMod.ModLocString("static_hover_tips", "INERT_POTION.description")
-    ) {
-        IsDebuff = true,
-    };
+    private static HoverTip InertPotionHoverTip {
+        get {
+            var inertPotionHoverTip = new HoverTip(
+                GlutonsAscensionsMod.ModLocString("static_hover_tips", "INERT_POTION.title"),
+                GlutonsAscensionsMod.ModLocString("static_hover_tips", "INERT_POTION.description")
+            );
+            object boxedHoverTip = inertPotionHoverTip;
+            _hoverTipIsDebuffProperty.SetBackingField(boxedHoverTip, true);
+            inertPotionHoverTip = (HoverTip) boxedHoverTip;
+            return inertPotionHoverTip;
+        }
+    }
 
     private static void UpdateLocalPotionHoldersAfterCombat() {
         if (NRun.Instance is not { } run) return;

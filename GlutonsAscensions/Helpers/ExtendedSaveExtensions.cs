@@ -7,7 +7,6 @@ using System.Text.Json.Serialization.Metadata;
 using BaseLib.Patches.Saves;
 using BaseLib.Utils;
 using HarmonyLib;
-using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Saves;
 
 namespace GlutonsAscensions.Helpers;

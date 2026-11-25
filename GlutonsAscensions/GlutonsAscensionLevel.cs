@@ -18,8 +18,22 @@ public static class GlutonsAscensionLevel {
     public static AscensionLevel Unprepared { get; private set; } = 0;
     public static AscensionLevel LockedIn { get; private set; } = 0;
 
+    public static class Blitz {
+    //     public static AscensionLevel TornRug { get; private set; } = 0;
+    //     public static AscensionLevel VolatileVials { get; private set; } = 0;
+    //     public static AscensionLevel ShortSupply { get; private set; } = 0;
+    //     public static AscensionLevel SlimPickings { get; private set; } = 0;
+    //     public static AscensionLevel ColdComfort { get; private set; } = 0;
+    //     public static AscensionLevel Unprepared { get; private set; } = 0;
+    //     public static AscensionLevel LockedIn { get; private set; } = 0;
+    }
+
     private static readonly PropertyInfo[] _ascensionLevelProperties = AccessTools
         .GetDeclaredProperties(typeof(GlutonsAscensionLevel))
+        .Where(f => f.PropertyType == typeof(AscensionLevel))
+        .ToArray();
+    private static readonly PropertyInfo[] _blitzAscensionLevelProperties = AccessTools
+        .GetDeclaredProperties(typeof(Blitz))
         .Where(f => f.PropertyType == typeof(AscensionLevel))
         .ToArray();
 
@@ -29,13 +43,18 @@ public static class GlutonsAscensionLevel {
     internal static int FirstGlutonAscensionLevel => BaseMaxAscensionAllowed + 1;
     internal static int LastGlutonAscensionLevel => BaseMaxAscensionAllowed + _ascensionLevelProperties.Length;
     internal static int MaxAscensionAllowed => LastGlutonAscensionLevel;
+    
+    internal static int BaseMaxBlitzAscensionAllowed;
+    // internal static int FirstGlutonBlitzAscensionLevel => BaseMaxBlitzAscensionAllowed + 1;
+    // internal static int LastGlutonBlitzAscensionLevel => BaseMaxBlitzAscensionAllowed + _blitzAscensionLevelProperties.Length;
+    internal static int MaxBlitzAscensionAllowed => BaseMaxBlitzAscensionAllowed;
 
     private static readonly Dictionary<int, AscensionLevel> _levelToAscensionMap = new();
     
     private static readonly Dictionary<AscensionLevel, string> _ascensionNames = new();
 
     private static readonly List<AscensionLevel> _ascensionLevels = [];
-    
+
     public static void Initialize() {
         for (var ascensionLevel = FirstGlutonAscensionLevel; ascensionLevel <= LastGlutonAscensionLevel; ascensionLevel++) {
             var ascensionLevelProperty = _ascensionLevelProperties[ascensionLevel - FirstGlutonAscensionLevel];
@@ -60,7 +79,7 @@ public static class GlutonsAscensionLevel {
 
     internal static void UpdateMaxAscensionAllowed(ref int maxAscensionAllowed) {
         if (maxAscensionAllowed < BaseMaxAscensionAllowed) {
-            throw new Exception($"[GlutonsAscensions] Max ascension allowed was attempted to be set lower than previous value ({BaseMaxAscensionAllowed}): {maxAscensionAllowed}");
+            throw new Exception($"[GlutonsAscensions] Max ascension allowed was attempted to be set lower than previous value of {BaseMaxAscensionAllowed}: {maxAscensionAllowed}");
         }
 
         if (maxAscensionAllowed > BaseMaxAscensionAllowed) {
@@ -69,6 +88,19 @@ public static class GlutonsAscensionLevel {
         }
 
         maxAscensionAllowed = MaxAscensionAllowed;
+    }
+    
+    internal static void UpdateMaxBlitzAscensionAllowed(ref int maxBlitzAscensionAllowed) {
+        if (maxBlitzAscensionAllowed < BaseMaxBlitzAscensionAllowed) {
+            throw new Exception($"[GlutonsAscensions] Max Blitz ascension allowed was attempted to be set lower than previous value of {BaseMaxBlitzAscensionAllowed}: {maxBlitzAscensionAllowed}");
+        }
+
+        if (maxBlitzAscensionAllowed > BaseMaxBlitzAscensionAllowed) {
+            BaseMaxBlitzAscensionAllowed = maxBlitzAscensionAllowed;
+            Logger.Info($"Updated max Blitz ascension allowed to {MaxBlitzAscensionAllowed}");
+        }
+
+        maxBlitzAscensionAllowed = MaxBlitzAscensionAllowed;
     }
 
     private static void AssertInitialized() {
@@ -87,11 +119,14 @@ public static class GlutonsAscensionLevel {
 
     public static AscensionLevel? LevelToAscension(int level) {
         AssertInitialized();
-        return IsGlutonsAscensionLevel(level) && _levelToAscensionMap.TryGetValue(level, out var ascension) ? ascension : null;
+        if (IsGlutonsAscensionLevel(level)) {
+            return _levelToAscensionMap.TryGetValue(level, out var ascenion) ? ascenion : null;
+        }
+        return (AscensionLevel) level;
     }
 
     public static string? NameOf(AscensionLevel ascension) {
         AssertInitialized();
-        return IsGlutonsAscension(ascension) && _ascensionNames.TryGetValue(ascension, out var name) ? name : null;
+        return IsGlutonsAscension(ascension) ? _ascensionNames.GetValueOrDefault(ascension) : ascension.ToString();
     }
 }

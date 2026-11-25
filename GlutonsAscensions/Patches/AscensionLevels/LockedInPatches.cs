@@ -10,6 +10,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Enchantments;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Models.Relics;
@@ -20,7 +21,13 @@ namespace GlutonsAscensions.Patches.AscensionLevels;
 
 [HarmonyPatch]
 public class LockedInPatches {
-    private static readonly SavedSpireField<CardModel, bool> IsEternal = new (() => false, GlutonsAscensionsMod.ModNamespace(nameof(IsEternal)));
+    private static readonly SavedSpireField<CardModel, bool> LockedInEternalCards = new(
+        () => false, GlutonsAscensionsMod.ModNamespace(nameof(LockedInEternalCards))
+    );
+
+    private static readonly Dictionary<Type, Type> EventTransformPairs = new() {
+        [typeof(Dowsing)] = typeof(Abundance),
+    };
     
     [HarmonyPatch(typeof(AncientEventModel), nameof(AncientEventModel.Done))]
     [HarmonyPrefix]
@@ -31,7 +38,7 @@ public class LockedInPatches {
         if (__instance.Owner?.RunState.CurrentActIndex == 0) {
             foreach (var card in __instance.Owner?.Deck.Cards ?? []) {
                 card.AddKeyword(CardKeyword.Eternal);
-                IsEternal[card] = true;
+                LockedInEternalCards[card] = true;
             }
         }
     }
@@ -41,9 +48,9 @@ public class LockedInPatches {
     static void AddEternalAfterTranscending(CardModel starterCard, ref CardModel __result) {
         if (!GlutonsAscensionLevel.LockedIn.HasAscension()) return;
 
-        if (IsEternal[starterCard]) {
+        if (LockedInEternalCards[starterCard]) {
             __result.AddKeyword(CardKeyword.Eternal);
-            IsEternal[__result] = true;
+            LockedInEternalCards[__result] = true;
         }
     }
 
@@ -94,124 +101,33 @@ public class LockedInPatches {
             .InsertAfterAndAdvance(
                 CodeInstruction.LoadLocal(cardPileAddResultLocalIndex),
                 CodeInstruction.LoadLocal(transcendenceStarterCardLocalIndex),
-                CodeInstruction.Call(() => RemoveEternalCardIfCardPileAddResultSuccess(null!, null!))
+                CodeInstruction.Call(() => RemoveCardFromEternalListIfCardPileAddResultSuccess(null!, null!))
             );
 
         return codeMatcher.Instructions();
     }
-
-    [HarmonyPatch]
-    public static class DowsingRodBetaCompatPatch {
-        private static MethodBase? _dowsingBeforeRoomEnteredMethod;
-        private static Type? _abundanceType;
-
-        [HarmonyPrepare]
-        static bool HasSupportedBetaInfo() {
-            if (!BetaCompatHelpers.TryGetBetaMethod(
-                "MegaCrit.Sts2.Core.Models.Cards.Dowsing",
-                "BeforeRoomEntered",
-                out _dowsingBeforeRoomEnteredMethod
-            )) return false;
-
-            if (!BetaCompatHelpers.TryGetBetaType(
-                "MegaCrit.Sts2.Core.Models.Cards.Abundance",
-                out _abundanceType
-            )) return false;
-            
-            return true;
-        }
-
-        [HarmonyTargetMethod]
-        static MethodBase GetDowsingBeforeRoomEntered() => AccessTools.AsyncMoveNext( _dowsingBeforeRoomEnteredMethod!)
-            ?? throw new Exception($"[GlutonsAscensions] {typeof(DowsingRodBetaCompatPatch)} target method has no async MoveNext");
-
-        [HarmonyTranspiler]
-        static IEnumerable<CodeInstruction> RemoveEternalBeforeTransform(IEnumerable<CodeInstruction> instructions) {
-            var transformToAbundanceMethod = AccessTools.Method(typeof(CardCmd), nameof(CardCmd.TransformTo)).MakeGenericMethod(_abundanceType!);
-            
-            var codeMatcher = new CodeMatcher(instructions);
-
-            // CardPileAddResult? nullable = await CardCmd.TransformTo<Abundance>((CardModel) dowsing);
-            // 
-            // ldloc.1      // dowsing
-            // ldc.i4.1
-            // call         class [System.Runtime]System.Threading.Tasks.Task`1<valuetype [System.Runtime]System.Nullable`1<valuetype MegaCrit.Sts2.Core.Entities.Cards.CardPileAddResult>> MegaCrit.Sts2.Core.Commands.CardCmd::TransformTo<class MegaCrit.Sts2.Core.Models.Cards.Abundance>(class MegaCrit.Sts2.Core.Models.CardModel, valuetype MegaCrit.Sts2.Core.Nodes.CommonUi.CardPreviewStyle)
-            codeMatcher
-                .MatchStartForward(
-                    CodeMatch.LoadsLocal(),
-                    CodeMatch.LoadsConstant(),
-                    CodeMatch.Calls(transformToAbundanceMethod)
-                )
-                .ThrowIfInvalid("Could not find an ldloc opcode followed by an ldc opcode followed by call to CardCmd.TransformTo");
-            
-            var dowsingCardLocalIndex = codeMatcher.Instruction.LocalIndex();
-
-            // dowsing = LockedInPatches.RemoveEternal(dowsing);
-            // 
-            // ldloc.1      // dowsing
-            // call         RemoveEternal
-            // stloc.1      // dowsing
-            codeMatcher
-                .Insert(
-                    CodeInstruction.LoadLocal(dowsingCardLocalIndex),
-                    CodeInstruction.Call(() => RemoveEternal(null!)),
-                    CodeInstruction.StoreLocal(dowsingCardLocalIndex)
-                );
-            
-            // CardPileAddResult? nullable = await CardCmd.TransformTo<Abundance>((CardModel) dowsing);
-            // 
-            // call         class [System.Runtime]System.Threading.Tasks.Task`1<valuetype [System.Runtime]System.Nullable`1<valuetype MegaCrit.Sts2.Core.Entities.Cards.CardPileAddResult>> MegaCrit.Sts2.Core.Commands.CardCmd::TransformTo<class MegaCrit.Sts2.Core.Models.Cards.Abundance>(class MegaCrit.Sts2.Core.Models.CardModel, valuetype MegaCrit.Sts2.Core.Nodes.CommonUi.CardPreviewStyle)
-            // callvirt     instance valuetype [System.Runtime]System.Runtime.CompilerServices.TaskAwaiter`1<!0/*valuetype [System.Runtime]System.Nullable`1<valuetype MegaCrit.Sts2.Core.Entities.Cards.CardPileAddResult>*/> class [System.Runtime]System.Threading.Tasks.Task`1<valuetype [System.Runtime]System.Nullable`1<valuetype MegaCrit.Sts2.Core.Entities.Cards.CardPileAddResult>>::GetAwaiter()
-            // stloc.3      // cardPileAddResult
-            codeMatcher
-                .MatchEndForward(
-                    CodeMatch.Calls(transformToAbundanceMethod),
-                    new CodeMatch(OpCodes.Callvirt),
-                    CodeMatch.StoresLocal()
-                )
-                .ThrowIfInvalid("Could not find call to CardCmd.TransformTo followed by a callvirt opcode followed by a stloc");
     
-            var cardPileAddResultLocalIndex = codeMatcher.Instruction.LocalIndex();
-    
-            // LockedInPatches.RemoveEternalCardIfCardPileAddResultSuccess(cardPileAddResult, dowsing);
-            // 
-            // ldloc.3      // cardPileAddResult
-            // ldloc.1      // dowsing
-            // call         RemoveEternalCardIfCardPileAddResultSuccess
-            codeMatcher
-                .InsertAfterAndAdvance(
-                    CodeInstruction.LoadLocal(cardPileAddResultLocalIndex),
-                    CodeInstruction.LoadLocal(dowsingCardLocalIndex),
-                    CodeInstruction.Call(() => RemoveEternalCardIfCardPileAddResultSuccess(null!, null!))
-                );
+    [HarmonyPatch(typeof(CardCmd), nameof(CardCmd.Transform), typeof(CardModel), typeof(CardModel), typeof(CardPreviewStyle))]
+    [HarmonyPrefix]
+    static void TransformPrefix(CardModel original, CardModel replacement) {
+        if (!GlutonsAscensionLevel.LockedIn.HasAscension()) return;
 
-            return codeMatcher.Instructions();
+        if (EventTransformPairs.GetValueOrDefault(original.GetType()) == replacement.GetType() && LockedInEternalCards[original]) {
+            original.RemoveKeyword(CardKeyword.Eternal);
+            replacement.AddKeyword(CardKeyword.Eternal);
+            LockedInEternalCards[replacement] = true;
         }
     }
     
-    [HarmonyPatch]
-    public static class AbundanceBetaCompatPatch {
-        private static Type? _abundanceType;
-        private static bool? _hasAbundanceType;
-        
-        [HarmonyPatch(typeof(CardCmd), nameof(CardCmd.Transform), typeof(CardModel), typeof(CardModel), typeof(CardPreviewStyle))]
-        [HarmonyPrefix]
-        static void TransformPrefix(CardModel original, CardModel replacement) {
-            if (!GlutonsAscensionLevel.LockedIn.HasAscension()) return;
-            
-            if (_hasAbundanceType is false) return;
-            
-            if (_hasAbundanceType is null) {
-                _hasAbundanceType = BetaCompatHelpers.TryGetBetaType(
-                    "MegaCrit.Sts2.Core.Models.Cards.Abundance",
-                    out _abundanceType
-                );
-            }
+    [HarmonyPatch(typeof(CardCmd), nameof(CardCmd.Transform), typeof(CardModel), typeof(CardModel), typeof(CardPreviewStyle))]
+    [HarmonyPostfix]
+    static void TransformPostfix(CardModel original, CardModel replacement, Task<CardPileAddResult?> __result) {
+        if (!GlutonsAscensionLevel.LockedIn.HasAscension()) return;
 
-            if (_hasAbundanceType == true && replacement.GetType() == _abundanceType) {
-                replacement.AddKeyword(CardKeyword.Eternal);
-                IsEternal[replacement] = true;
-            }
+        if (__result.Result?.success != true) return;
+        
+        if (EventTransformPairs.GetValueOrDefault(original.GetType()) == replacement.GetType() && LockedInEternalCards[original]) {
+            LockedInEternalCards.Remove(original);
         }
     }
     
@@ -222,9 +138,9 @@ public class LockedInPatches {
         return card;
     }
 
-    private static void RemoveEternalCardIfCardPileAddResultSuccess(CardPileAddResult? result, CardModel card) {
+    private static void RemoveCardFromEternalListIfCardPileAddResultSuccess(CardPileAddResult? result, CardModel card) {
         if (result is { success: true }) {
-            IsEternal.Remove(card);
+            LockedInEternalCards.Remove(card);
         }
     }
 
@@ -235,14 +151,14 @@ public class LockedInPatches {
 
         if (mutableCard.Keywords.Contains(CardKeyword.Eternal)) {
             __result.AddKeyword(CardKeyword.Eternal);
-            IsEternal[__result] = true;
+            LockedInEternalCards[__result] = true;
         }
     }
     
     [HarmonyPatch(typeof(CardModel), nameof(CardModel.FromSerializable))]
     [HarmonyPostfix]
     static void AddEternalWhenLoadingCard(ref CardModel __result) {
-        if (IsEternal[__result]) {
+        if (LockedInEternalCards[__result]) {
             __result.AddKeyword(CardKeyword.Eternal);
         }
     }
